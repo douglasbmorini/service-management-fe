@@ -1,0 +1,184 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Editar Atendimento' : 'Novo Atendimento' }}</h2>
+<div mat-dialog-content>
+  <form [formGroup]="attendanceForm" id="attendance-form" (ngSubmit)="onSubmit()">
+    <mat-form-field>
+      <mat-label>Cliente</mat-label>
+      <mat-select formControlName="client_id" required>
+        @if (clients$ | async; as clients) {
+          @for (client of clients; track client.id) {
+            <mat-option [value]="client.id">{{ client.company_name }}</mat-option>
+          }
+        }
+      </mat-select>
+      @if (isEditMode) {
+        <mat-hint>O cliente não pode ser alterado após a criação.</mat-hint>
+      } @else {
+        <mat-hint>
+          <span>Não encontrou o cliente? Status ATIVO ou </span><a class="hint-link" (click)="navigateToClientCreation()">Cadastre um novo aqui.</a>
+        </mat-hint>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Descrição do Serviço</mat-label>
+      <textarea matInput formControlName="service_description" required cdkTextareaAutosize></textarea>
+    </mat-form-field>
+
+    @if (!isEditMode) {
+      <mat-form-field>
+        <mat-label>Total de Horas (Opcional)</mat-label>
+        <input matInput formControlName="total_hours" type="number">
+      </mat-form-field>
+    }
+
+    <mat-form-field>
+      <mat-label>Link do Contrato</mat-label>
+      <input matInput formControlName="contract_link">
+      <mat-hint>Obrigatório para enviar a proposta.</mat-hint>
+      @if (attendanceForm.get('contract_link')?.hasError('pattern')) {
+        <mat-error>Por favor, insira um link válido (ex: http://exemplo.com).</mat-error>
+      }
+    </mat-form-field>
+
+    @if (isEditMode && data.attendance; as attendance) {
+      <!-- Seção de Detalhes Gerais (Apenas Visualização) -->
+      @if (attendanceForm.contains('due_date')) {
+        <h3 class="form-subtitle">Detalhes do Atendimento</h3>
+        <mat-form-field>
+          <mat-label>Data de Vencimento</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="due_date">
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      }
+
+      <!-- Seção de Progresso e Status -->
+      @if (attendance.status === 'EM_EXECUCAO' || attendance.status === 'PENDENTE') {
+        <h3 class="form-subtitle">Progresso e Status</h3>
+
+<!--        @if (attendanceForm.contains('hours_worked')) {-->
+<!--          <mat-form-field>-->
+<!--            <mat-label>Horas Trabalhadas</mat-label>-->
+<!--            <input matInput formControlName="hours_worked" type="number">-->
+<!--            <mat-hint>Horas trabalhadas: {{attendance.hours_worked}} | Total de horas: {{attendance.total_hours}}</mat-hint>-->
+<!--          </mat-form-field>-->
+<!--        } @else if (attendance.status === 'EM_EXECUCAO' && !attendance.total_hours) {-->
+<!--          <div class="info-text">O registro de horas não se aplica a este atendimento (serviço por valor fechado).</div>-->
+<!--        }-->
+
+        <!-- Notas de Progresso -->
+        <div class="notes-section">
+          <span class="notes-label">Notas de Progresso</span>
+          <mat-list>
+            @for (note of attendance.progress_notes; track note.id) {
+              <mat-list-item>
+                <mat-icon matListItemIcon>comment</mat-icon>
+                <div matListItemTitle>{{ note.note }}</div>
+                <div matListItemLine>
+                  <span>{{ note.hours_spent }} - {{ note.user.full_name }} - {{ note.created_at | date:'short' }}</span>
+                </div>
+              </mat-list-item>
+            } @empty {
+              <p class="empty-notes">Nenhuma nota de progresso registrada.</p>
+            }
+          </mat-list>
+          @if (attendance.status === 'EM_EXECUCAO' && attendance.total_hours !== attendance.hours_worked) {
+            <div class="add-note-form" [formGroup]="progressNoteForm">
+              <div class="note-inputs">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="note-textarea">
+                  <mat-label>Adicionar nota de progresso</mat-label>
+                  <textarea matInput formControlName="note" cdkTextareaAutosize></textarea>
+                </mat-form-field>
+                @if (attendance.total_hours) {
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="hours-input">
+                    <mat-label>Horas Gastas</mat-label>
+                    <input matInput formControlName="hours_spent" type="number" min="0.1" [errorStateMatcher]="immediateErrorMatcher">
+                  @if(progressNoteForm.get('hours_spent')?.hasError('maxHoursExceeded')) {
+                    <mat-error>
+                      Valor excede as {{ progressNoteForm.get('hours_spent')?.getError('maxHoursExceeded').max.toFixed(2) }} horas restantes.
+                    </mat-error>
+                  }
+                  </mat-form-field>
+                }
+              </div>
+              @if (attendance.total_hours) {
+                <span class="hours-info">Horas trabalhadas: {{attendance.hours_worked || 0}} / {{attendance.total_hours}}</span>
+              }
+              <button mat-flat-button color="primary" type="button" (click)="onAddProgressNote()"
+                      [disabled]="progressNoteForm.invalid || isAddingProgressNote">Adicionar</button>
+            </div>
+          } @else {
+            <span class="hours-info">Horas trabalhadas: {{attendance.hours_worked || 0}} / {{attendance.total_hours}}</span>
+          }
+        </div>
+
+        <!-- Notas de Bloqueio -->
+        <div class="notes-section">
+          <span class="notes-label">Notas de Bloqueio</span>
+          <mat-list>
+            @for (note of attendance.blocker_notes; track note.id) {
+              <mat-list-item [class.resolved-note]="note.is_resolved">
+                <mat-icon matListItemIcon>{{ note.is_resolved ? 'check_circle' : 'error' }}</mat-icon>
+                <div matListItemTitle>{{ note.note }}</div>
+                <div matListItemLine>
+                  <span>{{ note.user.full_name }} - {{ note.created_at | date:'short' }}</span>
+                  @if (note.is_resolved) {
+                    <span class="resolved-by"> (Resolvido por {{ note.resolved_by_user?.full_name }} em {{ note.resolved_at | date:'short' }})</span>
+                  }
+                </div>
+                @if (!note.is_resolved) {
+                  <button mat-icon-button color="primary" (click)="onResolveBlocker(note.id)" title="Resolver Bloqueio">
+                    <mat-icon>task_alt</mat-icon>
+                  </button>
+                }
+              </mat-list-item>
+            } @empty {
+              <p class="empty-notes">Nenhum bloqueio registrado.</p>
+            }
+          </mat-list>
+          @if (attendance.status === 'EM_EXECUCAO') {
+            <div class="add-note-form">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Adicionar nota de bloqueio</mat-label>
+                <textarea matInput [formControl]="newBlockerNoteControl" cdkTextareaAutosize></textarea>
+              </mat-form-field>
+              <button mat-flat-button color="warn" type="button" (click)="onAddBlockerNote()"
+                      [disabled]="newBlockerNoteControl.invalid || isAddingBlockerNote">Adicionar Bloqueio</button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Seção de Faturamento -->
+      @if (attendance.status !== 'PENDENTE' && attendanceForm.contains('invoice_link') || attendanceForm.contains('payment_receipt_link')) {
+        <h3 class="form-subtitle">Faturamento</h3>
+      }
+      @if (attendanceForm.contains('invoice_link')) {
+        <mat-form-field>
+          <mat-label>Link da Fatura</mat-label>
+          <input matInput formControlName="invoice_link">
+          @if (attendanceForm.get('invoice_link')?.hasError('pattern')) {
+            <mat-error>Por favor, insira um link válido.</mat-error>
+          }
+          <mat-hint>Preencher este campo muda o status para "Faturada".</mat-hint>
+        </mat-form-field>
+      }
+      @if (attendanceForm.contains('payment_receipt_link')) {
+        <mat-form-field>
+          <mat-label>Link do Comprovante de Pagamento</mat-label>
+          <input matInput formControlName="payment_receipt_link">
+          @if (attendanceForm.get('payment_receipt_link')?.hasError('pattern')) {
+            <mat-error>Por favor, insira um link válido.</mat-error>
+          }
+          <mat-hint>Preencher este campo muda o status para "Finalizada".</mat-hint>
+        </mat-form-field>
+      }
+    }
+  </form>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="closeDialog()">Cancelar</button>
+  <button mat-flat-button color="primary" form="attendance-form" type="submit" [disabled]="attendanceForm.invalid || isSaving">
+    {{ isSaving ? 'Salvando...' : 'Salvar' }}
+  </button>
+</div>

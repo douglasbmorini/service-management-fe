@@ -1,0 +1,65 @@
+<h2 mat-dialog-title>Adicionar Desconto</h2>
+<div mat-dialog-content>
+  <p>Adicionando desconto para o serviço: <strong>{{ data.serviceDescription }}</strong></p>
+  <form [formGroup]="discountForm" id="discount-form" (ngSubmit)="onSubmit()">
+
+    <!-- Quick Discounts -->
+    <div class="discount-section">
+      <h3 class="form-subtitle">Descontos Rápidos</h3>
+      <div formGroupName="quickDiscounts" class="quick-discounts-container">
+        <mat-checkbox formControlName="iss">Desconto de ISS (2,00%)</mat-checkbox>
+      </div>
+    </div>
+
+    <!-- Custom Discounts -->
+    <div class="discount-section">
+      <div class="section-header">
+        <h3 class="form-subtitle">Descontos Personalizados</h3>
+        <button mat-stroked-button color="accent" type="button" (click)="addCustomDiscount()">
+          <mat-icon>add</mat-icon> Adicionar
+        </button>
+      </div>
+
+      <div formArrayName="customDiscounts" class="custom-discounts-list">
+        @for (discountGroup of customDiscounts.controls; track $index) {
+          <div [formGroupName]="$index" class="custom-discount-item">
+            <mat-form-field class="desc-field">
+              <mat-label>Descrição</mat-label>
+              <input matInput formControlName="description" required>
+            </mat-form-field>
+
+            <mat-form-field class="type-field">
+              <mat-label>Tipo</mat-label>
+              <mat-select formControlName="discount_type" required>
+                <mat-option value="FIXED">Fixo (R$)</mat-option>
+                <mat-option value="PERCENTAGE">Percentual (%)</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field class="value-field">
+              <mat-label>Valor</mat-label>
+              <input matInput formControlName="value" type="number" required min="0.01">
+            </mat-form-field>
+
+            <button mat-icon-button color="warn" type="button" (click)="removeCustomDiscount($index)" title="Remover Desconto">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        }
+        @if (customDiscounts.controls.length === 0) {
+          <p class="value-muted">Nenhum desconto personalizado adicionado.</p>
+        }
+      </div>
+    </div>
+
+    @if (discountForm.hasError('noDiscount') && (discountForm.touched || discountForm.dirty)) {
+      <mat-error class="global-error">É necessário adicionar pelo menos um desconto.</mat-error>
+    }
+  </form>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="dialogRef.close()">Cancelar</button>
+  <button mat-flat-button color="primary" form="discount-form" type="submit" [disabled]="discountForm.invalid || isSaving">
+    {{ isSaving ? 'Salvando...' : 'Adicionar Desconto' }}
+  </button>
+</div>

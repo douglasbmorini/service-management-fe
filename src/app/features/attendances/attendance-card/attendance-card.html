@@ -1,0 +1,30 @@
+<mat-card class="attendance-mat-card" (click)="onClick()">
+  <mat-card-header>
+    <mat-card-title>{{ attendance.service_description }}</mat-card-title>
+    <mat-card-subtitle>{{ attendance.client.company_name }}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="card-details">
+      <div class="detail-item">
+        <mat-icon>today</mat-icon>
+        <span>Prazo: {{ attendance.due_date | date }}</span>
+      </div>
+      @if (attendance.total_hours) {
+        <div class="detail-item">
+          <mat-icon>hourglass_empty</mat-icon>
+          <span>{{ remainingHours() }}h de {{ attendance.total_hours }}h restantes</span>
+        </div>
+      } @else {
+        <div class="detail-item">
+          <mat-icon>assignment</mat-icon>
+          <span>Pacote fechado</span>
+        </div>
+      }
+    </div>
+  </mat-card-content>
+  <mat-card-actions align="end">
+    <mat-chip-listbox>
+      <mat-chip [ngClass]="statusClass()">{{ attendance.status.replace('_', ' ') | titlecase }}</mat-chip>
+    </mat-chip-listbox>
+  </mat-card-actions>
+</mat-card>

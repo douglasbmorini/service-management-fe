@@ -1,0 +1,19 @@
+# Defina o comportamento padrão para arquivos de texto.
+# Isso fará com que o Git normalize as quebras de linha para LF nos commits.
+* text=auto eol=lf
+
+# Declare explicitamente os arquivos que devem sempre ter quebras de linha LF.
+*.html text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.gitignore text eol=lf
+
+# Declare arquivos que devem manter suas quebras de linha originais (geralmente binários).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary

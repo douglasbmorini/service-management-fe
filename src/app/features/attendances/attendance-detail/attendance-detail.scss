@@ -1,0 +1,115 @@
+:host {
+  display: block;
+}
+
+.mat-mdc-dialog-content {
+  padding: 0 24px 24px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  padding: 16px 24px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+mat-dialog-content {
+  padding: 24px;
+  min-height: 300px;
+}
+
+mat-list-item {
+  height: auto !important;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.error-message {
+  color: var(--mat-sys-error);
+  text-align: center;
+}
+
+.timeline-section {
+  margin-bottom: 2rem;
+}
+
+.details-content {
+  padding-top: 1.5rem;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.details-section {
+  background-color: var(--mat-sys-surface-container-lowest);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+
+  .section-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--mat-sys-primary);
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    padding-bottom: 0.5rem;
+    margin: 0 0 1rem 0;
+  }
+}
+
+.value-muted {
+  font-style: italic;
+  color: var(--mat-sys-on-surface-variant);
+  padding: 1rem 0;
+}
+
+.link {
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+  font-weight: 500;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.notes-list {
+  .mat-mdc-list-item {
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .resolved-note {
+    .mat-mdc-list-item-title, .mat-mdc-list-item-line {
+      text-decoration: line-through;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  .resolved-by {
+    font-style: italic;
+    font-size: 0.8em;
+    margin-left: 0.5rem;
+  }
+}
+
+mat-dialog-actions {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  padding: 8px 24px;
+}

@@ -1,0 +1,57 @@
+<h2 mat-dialog-title>Adicionar Taxa Mensal</h2>
+<div mat-dialog-content>
+  <p>Adicionando taxa para o colaborador: <strong>{{ data.userName }}</strong></p>
+  <form [formGroup]="userDiscountForm" id="user-discount-form" (ngSubmit)="onSubmit()">
+
+    <!-- Quick Discounts -->
+    <div class="discount-section">
+      <h3 class="form-subtitle">Taxas Rápidas</h3>
+      <div formGroupName="quickUserDiscounts" class="quick-discounts-container">
+        <mat-checkbox formControlName="gmailTools">Ferramentas Gmail (R$ 80,00)</mat-checkbox>
+      </div>
+    </div>
+
+    <!-- Custom Discounts -->
+    <div class="discount-section">
+      <div class="section-header">
+        <h3 class="form-subtitle">Taxas Personalizadas</h3>
+        <button mat-stroked-button color="accent" type="button" (click)="addCustomUserDiscount()">
+          <mat-icon>add</mat-icon> Adicionar
+        </button>
+      </div>
+
+      <div formArrayName="customUserDiscounts" class="custom-discounts-list">
+        @for (discountGroup of customUserDiscounts.controls; track $index) {
+          <div [formGroupName]="$index" class="custom-discount-item">
+            <mat-form-field class="desc-field">
+              <mat-label>Descrição</mat-label>
+              <input matInput formControlName="description" required>
+            </mat-form-field>
+
+            <mat-form-field class="value-field">
+              <mat-label>Valor (R$)</mat-label>
+              <input matInput formControlName="amount" type="number" required min="0.01">
+            </mat-form-field>
+
+            <button mat-icon-button color="warn" type="button" (click)="removeCustomUserDiscount($index)" title="Remover Taxa">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        }
+        @if (customUserDiscounts.controls.length === 0) {
+          <p class="value-muted">Nenhuma taxa personalizada adicionada.</p>
+        }
+      </div>
+    </div>
+
+    @if (userDiscountForm.hasError('noUserDiscount') && (userDiscountForm.touched || userDiscountForm.dirty)) {
+      <mat-error class="global-error">É necessário adicionar pelo menos uma taxa.</mat-error>
+    }
+  </form>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="dialogRef.close()">Cancelar</button>
+  <button mat-flat-button color="primary" form="user-discount-form" type="submit" [disabled]="userDiscountForm.invalid || isSaving">
+    {{ isSaving ? 'Salvando...' : 'Adicionar Taxa(s)' }}
+  </button>
+</div>

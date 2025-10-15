@@ -1,0 +1,72 @@
+// Base container for the dashboard
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+// Header containing filters and view toggles
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+// Grouping for filter controls
+.filters {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filter-select {
+  // Ajusta a largura dos selects para não ocuparem muito espaço
+  width: 220px;
+}
+
+// Main content area
+.dashboard-content {
+  min-height: 300px; // Ensures a minimum height during loading or for empty states
+  position: relative; // Para o posicionamento da barra de progresso
+}
+
+// Grid for the card view
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+// List for the timeline view
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.timeline-card mat-card-content {
+  padding-top: 16px;
+}
+
+// Centered messages for loading, error, and empty states
+.error-message, .empty-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 1.1rem;
+}
+
+.error-message {
+  color: var(--mat-sys-on-error-container);
+  background-color: var(--mat-sys-error-container);
+  border: 1px solid var(--mat-sys-error);
+  border-radius: 8px;
+}

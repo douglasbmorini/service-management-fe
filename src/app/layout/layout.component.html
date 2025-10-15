@@ -1,0 +1,35 @@
+<mat-toolbar>
+  <img ngSrc="logo.png" width="88" height="43.625" alt="Logo">
+
+  <!-- Links de Navegação -->
+  <a mat-button routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Dashboard</a>
+  @if (authService.isManager()) {
+    <a mat-button routerLink="/gerencial" routerLinkActive="active-link">Gerencial</a>
+    <a mat-button routerLink="/financeiro" routerLinkActive="active-link">Financeiro</a>
+  }
+
+  <span class="spacer"></span>
+
+  <!-- User Name -->
+  @if (currentUser(); as user) {
+    <a mat-button routerLink="/perfil" class="user-name-link">
+      <span class="user-name">Olá, {{ user.full_name }}</span>
+    </a>
+  }
+
+  <!-- Ações da Barra de Ferramentas -->
+  <button mat-icon-button (click)="themeService.toggleTheme()" [matTooltip]="'Mudar para tema ' + (!themeService.isDarkMode() ? 'escuro' : 'claro')">
+    @if (themeService.isDarkMode()) {
+      <mat-icon>light_mode</mat-icon>
+    } @else {
+      <mat-icon>dark_mode</mat-icon>
+    }
+  </button>
+  @if (authService.isLoggedIn()) {
+    <button mat-button (click)="logout()">Sair</button>
+  }
+</mat-toolbar>
+
+<main>
+  <router-outlet></router-outlet>
+</main>

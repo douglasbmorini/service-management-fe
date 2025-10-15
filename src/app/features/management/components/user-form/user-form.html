@@ -1,0 +1,64 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Editar Usuário' : 'Novo Usuário' }}</h2>
+<div mat-dialog-content>
+  <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+    <mat-form-field>
+      <mat-label>Nome Completo</mat-label>
+      <input matInput formControlName="full_name" required placeholder="Ex: João da Silva">
+      @if (userForm.get('full_name')?.hasError('required') && userForm.get('full_name')?.touched) {
+        <mat-error>O nome completo é obrigatório.</mat-error>
+      }
+      @if (userForm.get('full_name')?.hasError('pattern') && userForm.get('full_name')?.touched) {
+        <mat-error>Por favor, insira o nome e sobrenome.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Email</mat-label>
+      <input matInput formControlName="email" required type="email">
+      @if (userForm.get('email')?.hasError('required') && userForm.get('email')?.touched) {
+        <mat-error>O email é obrigatório.</mat-error>
+      }
+      @if (userForm.get('email')?.hasError('pattern') && userForm.get('email')?.touched) {
+        <mat-error>Por favor, insira um email válido (ex: nome@dominio.com).</mat-error>
+      }
+      @if (!isEditMode) {
+        <mat-hint>Uma senha aleatória será enviada para este e-mail.</mat-hint>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Telefone</mat-label>
+      <input matInput formControlName="phone_number" required placeholder="(XX) XXXXX-XXXX" mask="(00) 0000-0000||(00) 00000-0000">
+      @if (userForm.get('phone_number')?.hasError('required') && userForm.get('phone_number')?.touched) {
+        <mat-error>O telefone é obrigatório.</mat-error>
+      }
+<!--      @if (userForm.get('phone_number')?.hasError('pattern') && userForm.get('phone_number')?.touched) {-->
+<!--        <mat-error>Formato inválido. Use (XX) XXXXX-XXXX.</mat-error>-->
+<!--      }-->
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Perfil</mat-label>
+      <mat-select formControlName="role" required>
+        @for (role of userRoles; track role) {
+          <mat-option [value]="role">{{ role | titlecase }}</mat-option>
+        }
+      </mat-select>
+      @if (userForm.get('role')?.disabled) {
+        <mat-hint>Apenas administradores podem alterar o perfil.</mat-hint>
+      }
+    </mat-form-field>
+
+    @if (isEditMode) {
+      <mat-slide-toggle formControlName="is_active" color="primary">
+        Usuário Ativo
+      </mat-slide-toggle>
+    }
+  </form>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="dialogRef.close()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="userForm.invalid">
+    Salvar
+  </button>
+</div>

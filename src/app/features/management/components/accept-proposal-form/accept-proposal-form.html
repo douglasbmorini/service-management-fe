@@ -1,0 +1,67 @@
+<h2 mat-dialog-title>Aceitar Proposta</h2>
+<div mat-dialog-content>
+  @if (!hasFinancialData) {
+    <div class="validation-error">
+      <mat-icon color="warn">warning</mat-icon>
+      <p>Os dados financeiros do cliente <strong>{{ data.attendance.client.company_name }}</strong> estão incompletos. Por favor, atualize o cadastro do cliente antes de aceitar a proposta.</p>
+      <button mat-stroked-button color="primary" (click)="editClient()">
+        <mat-icon>edit</mat-icon>
+        Editar Cliente
+      </button>
+    </div>
+  }
+
+  <form [formGroup]="acceptForm" id="accept-proposal-form" (ngSubmit)="onSubmit()">
+    <p>Informe os detalhes financeiros e o prazo para o atendimento <strong>{{ data.attendance.service_description }}</strong>.</p>
+
+    <mat-form-field>
+      <mat-label>Valor Total da Proposta (R$)</mat-label>
+      <input matInput formControlName="total_proposal_value" type="number" required min="0.01">
+      @if (acceptForm.get('total_proposal_value')?.hasError('required')) {
+        <mat-error>O valor total é obrigatório.</mat-error>
+      }
+      @if (acceptForm.get('total_proposal_value')?.hasError('min')) {
+        <mat-error>O valor deve ser maior que zero.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Data de Vencimento do Pagamento</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="due_date" required>
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+      @if (acceptForm.get('due_date')?.hasError('required')) {
+        <mat-error>A data de vencimento é obrigatória.</mat-error>
+      }
+      @if (acceptForm.get('due_date')?.hasError('pastDate')) {
+        <mat-error>A data não pode ser no passado.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Total de Horas (Pacote de Horas)</mat-label>
+      <input matInput formControlName="total_hours" type="number" min="1">
+      <mat-hint>Opcional. Preencha apenas se o serviço for por pacote de horas.</mat-hint>
+      @if (acceptForm.get('total_hours')?.hasError('min')) {
+        <mat-error>O total de horas deve ser no mínimo 1.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Link do Contrato (Assinado)</mat-label>
+      <input matInput formControlName="contract_link" required>
+      @if (acceptForm.get('contract_link')?.hasError('required')) {
+        <mat-error>O link do contrato é obrigatório.</mat-error>
+      }
+      @if (acceptForm.get('contract_link')?.hasError('pattern')) {
+        <mat-error>Por favor, insira um link válido.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="dialogRef.close()">Cancelar</button>
+  <button mat-flat-button color="primary" form="accept-proposal-form" type="submit" [disabled]="acceptForm.invalid || isSaving">
+    {{ isSaving ? 'Salvando...' : 'Aceitar Proposta' }}
+  </button>
+</div>

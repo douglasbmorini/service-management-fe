@@ -1,0 +1,71 @@
+<h2 mat-dialog-title>Iniciar Execução do Atendimento</h2>
+<div mat-dialog-content>
+  <form [formGroup]="startExecutionForm" id="start-execution-form" (ngSubmit)="onSubmit()">
+    <p>
+      Atribua um ou mais colaboradores para o atendimento <strong>{{ data.attendance.service_description }}</strong>.
+    </p>
+    <div class="proposal-value">
+      <span>Valor Total da Proposta:</span>
+      <strong>{{ data.attendance.total_proposal_value | currency }}</strong>
+    </div>
+
+    <div class="collaborators-section">
+      <div class="section-header">
+        <h3 class="form-subtitle">Colaboradores (Valor Fechado)</h3>
+        <button mat-flat-button color="accent" type="button" (click)="addCollaborator()">
+          <mat-icon>add</mat-icon> Adicionar Colaborador
+        </button>
+      </div>
+
+      <div formArrayName="collaborators" class="collaborators-list">
+        @for (collabGroup of collaborators.controls; track $index) {
+          <div [formGroupName]="$index" class="collaborator-item">
+            <mat-form-field>
+              <mat-label>Colaborador</mat-label>
+              <mat-select formControlName="user_id" required>
+                @if (getFilteredCollaborators($index) | async; as users) {
+                  @for (user of users; track user.id) {
+                    <mat-option [value]="user.id">{{ user.full_name }}</mat-option>
+                  }
+                }
+              </mat-select>
+              @if (collabGroup.get('user_id')?.hasError('required') && collabGroup.get('user_id')?.touched) {
+                <mat-error>Colaborador é obrigatório.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>Valor Financeiro</mat-label>
+              <input matInput formControlName="financial_value" type="number" required min="0.01">
+              @if (collabGroup.get('financial_value')?.hasError('required') && collabGroup.get('financial_value')?.touched) {
+                <mat-error>Valor é obrigatório.</mat-error>
+              }
+              @if (collabGroup.get('financial_value')?.hasError('min') && collabGroup.get('financial_value')?.touched) {
+                <mat-error>Valor deve ser maior que zero.</mat-error>
+              }
+            </mat-form-field>
+
+            <button mat-icon-button color="warn" type="button" (click)="removeCollaborator($index)" title="Remover Colaborador">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        }
+        @if (collaborators.controls.length === 0) {
+          <p class="value-muted">Nenhum colaborador adicionado.</p>
+        }
+      </div>
+      @if (collaborators.hasError('sumMismatch') && collaborators.dirty) {
+        <mat-error class="global-error">A soma dos valores ({{ collaborators.getError('sumMismatch').current | currency }}) deve ser igual ao valor total da proposta ({{ data.attendance.total_proposal_value | currency }}).</mat-error>
+      }
+      @if (collaborators.hasError('minlength') && collaborators.touched) {
+        <mat-error class="global-error">É necessário adicionar pelo menos um colaborador.</mat-error>
+      }
+    </div>
+  </form>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="dialogRef.close()">Cancelar</button>
+  <button mat-flat-button color="primary" form="start-execution-form" type="submit" [disabled]="startExecutionForm.invalid || isSaving || collaborators.controls.length === 0">
+    {{ isSaving ? 'Iniciando...' : 'Iniciar Execução' }}
+  </button>
+</div>

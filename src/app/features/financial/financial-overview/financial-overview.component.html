@@ -1,0 +1,133 @@
+<div class="overview-container">
+
+  <!-- Summary Cards -->
+  <div class="overview-cards">
+    <mat-card class="overview-card overdue">
+      <mat-card-header>
+        <mat-card-title>Pagamentos Vencidos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>{{ overduePayments | currency }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="overview-card upcoming">
+      <mat-card-header>
+        <mat-card-title>A Receber (Próx. 30 dias)</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>{{ upcomingReceivables | currency }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="overview-card in-progress">
+      <mat-card-header>
+        <mat-card-title>Valor em Andamento</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>{{ inProgressValue | currency }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="overview-card received">
+      <mat-card-header>
+        <mat-card-title>Recebido no Período</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>{{ receivedInPeriod | currency }}</p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Monthly Invoiced Chart -->
+  @if (monthlyChartData && monthlyChartData.length > 0) {
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>Faturamento Mensal</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <ngx-charts-bar-vertical
+          [results]="monthlyChartData"
+          [xAxis]="true"
+          [yAxis]="true"
+          [legend]="false"
+          [showXAxisLabel]="true"
+          [showYAxisLabel]="true"
+          xAxisLabel="Mês"
+          yAxisLabel="Valor Faturado">
+        </ngx-charts-bar-vertical>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Detailed Entries Table -->
+  @if (detailedEntries && detailedEntries.length > 0) {
+    <mat-card class="table-card">
+      <mat-card-header>
+        <mat-card-title>Detalhes de Contas a Receber</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <table mat-table [dataSource]="detailedEntries" class="mat-elevation-z2">
+
+          <!-- Type Column -->
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef> Tipo </th>
+            <td mat-cell *matCellDef="let element">
+              <span [ngClass]="{
+                'status-overdue': element.type === 'Overdue',
+                'status-upcoming': element.type === 'Upcoming',
+                'status-received': element.type === 'Received'
+              }">
+                @switch (element.type) {
+                  @case ('Overdue') { <span>Vencido</span> }
+                  @case ('Upcoming') { <span>A Vencer</span> }
+                  @case ('Received') { <span>Recebido</span> }
+                }
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Client Column -->
+          <ng-container matColumnDef="client">
+            <th mat-header-cell *matHeaderCellDef> Cliente </th>
+            <td mat-cell *matCellDef="let element"> {{element.client.company_name}} </td>
+          </ng-container>
+
+          <!-- Description Column -->
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef> Descrição </th>
+            <td mat-cell *matCellDef="let element"> {{element.service_description}} </td>
+          </ng-container>
+
+          <!-- Due Date Column -->
+          <ng-container matColumnDef="due_date">
+            <th mat-header-cell *matHeaderCellDef> Data de Vencimento </th>
+            <td mat-cell *matCellDef="let element"> {{element.due_date | date:'dd/MM/yyyy'}} </td>
+          </ng-container>
+
+          <!-- Value Column -->
+          <ng-container matColumnDef="value">
+            <th mat-header-cell *matHeaderCellDef> Valor </th>
+            <td mat-cell *matCellDef="let element"> {{element.total_proposal_value | currency}} </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef> Ações </th>
+            <td mat-cell *matCellDef="let element">
+              @if (authService.isAdmin()) {
+                <button mat-icon-button color="primary" (click)="openAddDiscountDialog(element)" title="Adicionar Desconto">
+                  <mat-icon>money_off</mat-icon>
+                </button>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </mat-card-content>
+    </mat-card>
+  }
+
+</div>

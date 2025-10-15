@@ -1,0 +1,35 @@
+.tab-content {
+  padding: 1.5rem 0.5rem;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+
+  h3 {
+    margin: 0;
+  }
+}
+
+table {
+  width: 100%;
+}
+
+.mat-mdc-icon-button {
+  margin: 0 4px;
+}
+
+.error-message {
+  color: var(--color-error);
+  padding: 1rem;
+  background-color: color-mix(in srgb, var(--color-error) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+  border-radius: var(--border-radius);
+  text-align: center;
+}
+
+td.mat-mdc-cell mat-icon {
+  vertical-align: middle;
+}

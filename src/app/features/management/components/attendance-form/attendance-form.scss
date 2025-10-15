@@ -1,0 +1,96 @@
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-subtitle {
+  margin: 1rem 0 0.5rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.hint-link {
+  cursor: pointer;
+  color: var(--mat-sys-primary);
+  text-decoration: underline;
+}
+
+.info-text {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--mat-sys-on-surface-variant);
+  background-color: var(--mat-sys-surface-container);
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.notes-section {
+  margin-top: 1.5rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.notes-label {
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.empty-notes {
+  font-style: italic;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+.add-note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-top: 1rem;
+
+  .note-inputs {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .note-textarea {
+    flex-grow: 1;
+  }
+
+  .hours-input {
+    width: 120px;
+    flex-shrink: 0;
+  }
+
+  mat-form-field {
+    flex-grow: 1;
+  }
+}
+.hours-info {
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+  align-self: flex-start;
+  margin-left: 8px;
+}
+
+.resolved-note {
+  .mat-mdc-list-item-title, .mat-mdc-list-item-line {
+    color: var(--mat-sys-on-surface-variant);
+    text-decoration: line-through;
+  }
+  .mat-icon {
+    color: var(--mat-sys-primary);
+  }
+}
+
+.resolved-by {
+  font-style: italic;
+  font-size: 0.8rem;
+}

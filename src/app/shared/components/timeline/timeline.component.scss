@@ -1,0 +1,132 @@
+@use '@angular/material' as mat;
+
+:host {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem 0;
+}
+
+.timeline-container {
+  display: flex;
+  align-items: flex-start; // Alinha os itens no topo
+  justify-content: center;
+  width: 100%;
+}
+
+.timeline-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 120px; // Largura para cada item
+  flex-shrink: 0; // Previne que os itens encolham
+}
+
+.timeline-step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--mat-sys-outline-variant);
+  background-color: var(--mat-sys-surface-container-high);
+  transition: all 0.4s ease;
+  margin-bottom: 0.5rem;
+
+  .step-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      font-size: 20px;
+      height: 20px;
+      width: 20px;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+}
+
+.step-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+  max-width: 100px;
+  line-height: 1.2;
+}
+
+.timeline-connector {
+  flex-grow: 1;
+  height: 2px;
+  background-color: var(--mat-sys-outline-variant);
+  margin-top: 20px; // Alinha com o centro do ícone
+  transition: background-color 0.4s ease;
+}
+
+// --- Estilos de Estado ---
+
+// Estado Completado
+.timeline-step.completed,
+.timeline-connector.completed {
+  border-color: var(--mat-sys-primary);
+  background-color: var(--mat-sys-primary);
+}
+
+.timeline-step.completed .step-icon mat-icon {
+  color: var(--mat-sys-on-primary);
+}
+
+.step-label.completed {
+  color: var(--mat-sys-on-surface);
+  font-weight: 600;
+}
+
+// Estado Atual
+.timeline-step.current {
+  border-color: var(--mat-sys-primary);
+  background-color: var(--mat-sys-surface-container-high);
+  transform: scale(1.1);
+  box-shadow: 0 0 0 4px var(--mat-sys-primary-container); // Um brilho sutil
+
+  .step-icon mat-icon {
+    color: var(--mat-sys-primary);
+  }
+}
+
+.step-label.current {
+  color: var(--mat-sys-primary);
+  font-weight: 700;
+}
+
+// Variação para o estado PENDENTE (quando atual)
+.timeline-step.current.PENDENTE {
+  border-color: var(--mat-sys-tertiary);
+  box-shadow: 0 0 0 4px var(--mat-sys-tertiary-container);
+
+  .step-icon mat-icon {
+    color: var(--mat-sys-tertiary);
+  }
+}
+
+.step-label.current.PENDENTE {
+  color: var(--mat-sys-tertiary);
+}
+
+// Estado de Erro (RECUSADA)
+.timeline-step.error,
+.timeline-connector.error {
+  border-color: var(--mat-sys-error);
+  background-color: var(--mat-sys-error);
+}
+
+.timeline-step.error .step-icon mat-icon {
+  color: var(--mat-sys-on-error);
+}
+
+.step-label.error {
+  color: var(--mat-sys-error);
+  font-weight: 700;
+}

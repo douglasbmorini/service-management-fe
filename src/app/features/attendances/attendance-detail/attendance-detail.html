@@ -1,0 +1,192 @@
+<div class="modal-header">
+  @if (state().attendance; as att) {
+    <h2 mat-dialog-title>{{ att.service_description }}</h2>
+  } @else {
+    <h2 mat-dialog-title>Detalhes do Atendimento</h2>
+  }
+  <button mat-icon-button (click)="dialogRef.close()" aria-label="Fechar modal">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="mat-typography">
+  @if (state().isLoading) {
+    <div class="loading-spinner">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  } @else if (state().error) {
+    <p class="error-message">{{ state().error }}</p>
+  } @else {
+    @if (state().attendance; as att) {
+      <!-- Linha do Tempo -->
+      <div class="timeline-section">
+        <app-timeline [currentStatus]="att.status" />
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="details-content">
+        <div class="details-grid">
+          <!-- Coluna da Esquerda -->
+          <div class="grid-column">
+            <div class="details-section">
+              <h3 class="section-title">Cliente</h3>
+              <mat-list role="list">
+                <mat-list-item role="listitem">
+                  <mat-icon matListItemIcon>business</mat-icon>
+                  <div matListItemTitle>{{ att.client.company_name }}</div>
+                </mat-list-item>
+                <mat-list-item role="listitem">
+                  <mat-icon matListItemIcon>person</mat-icon>
+                  <div matListItemTitle>{{ att.client.contact_name }}</div>
+                  <div matListItemLine>{{ att.client.contact_email }}</div>
+                  <div matListItemLine>{{ att.client.contact_phone }}</div>
+                </mat-list-item>
+              </mat-list>
+            </div>
+
+            <div class="details-section">
+              <h3 class="section-title">Financeiro e Prazos</h3>
+              <mat-list role="list">
+                <mat-list-item role="listitem">
+                  <mat-icon matListItemIcon>monetization_on</mat-icon>
+                  <div matListItemTitle>Valor da Proposta</div>
+                  <div matListItemLine>{{ att.total_proposal_value | currency }}</div>
+                </mat-list-item>
+                <mat-list-item role="listitem">
+                  <mat-icon matListItemIcon>event</mat-icon>
+                  <div matListItemTitle>Vencimento</div>
+                  <div matListItemLine>{{ att.due_date | date:'dd/MM/yyyy' }}</div>
+                </mat-list-item>
+                <mat-list-item role="listitem">
+                  <mat-icon matListItemIcon>person</mat-icon>
+                  <div matListItemTitle>{{ att.client.finance_contact_name }}</div>
+                  <div matListItemLine>{{ att.client.finance_contact_email }}</div>
+                  <div matListItemLine>{{ att.client.finance_contact_phone }}</div>
+                </mat-list-item>
+                @if (att.total_hours) {
+                  <mat-list-item role="listitem">
+                    <mat-icon matListItemIcon>hourglass_top</mat-icon>
+                    <div matListItemTitle>Horas Contratadas</div>
+                    <div matListItemLine>{{ att.hours_worked || 0 | number:'1.1-2' }} / {{ att.total_hours | number:'1.1-2' }} horas</div>
+                  </mat-list-item>
+                }
+              </mat-list>
+            </div>
+
+            @if (authService.currentUserRole() !== 'cliente') {
+              <div class="details-section">
+                <h3 class="section-title">Colaboradores</h3>
+                <mat-list role="list">
+                  @if (att.collaborators && att.collaborators.length > 0) {
+                    @for (collab of att.collaborators; track collab.id) {
+                      <mat-list-item role="listitem">
+                        <mat-icon matListItemIcon>engineering</mat-icon>
+                        <div matListItemTitle>{{ collab.user.full_name }}</div>
+                        <div matListItemLine>{{ collab.financial_value | currency }}</div>
+                      </mat-list-item>
+                    }
+                  } @else {
+                    <p class="value-muted">Nenhum colaborador associado.</p>
+                  }
+                </mat-list>
+              </div>
+            }
+
+            <div class="details-section">
+              <h3 class="section-title">Documentos e Links</h3>
+              <mat-list role="list">
+                <mat-list-item role="listitem">
+                  <mat-icon matListItemIcon>description</mat-icon>
+                  <div matListItemTitle>Contrato</div>
+                  <div matListItemLine>
+                    @if(att.contract_link) {
+                      <a [href]="att.contract_link" target="_blank" class="link">Visualizar Contrato</a>
+                    } @else {
+                      <span class="value-muted">Não informado</span>
+                    }
+                  </div>
+                </mat-list-item>
+                <mat-list-item role="listitem">
+                  <mat-icon matListItemIcon>receipt_long</mat-icon>
+                  <div matListItemTitle>Fatura</div>
+                  <div matListItemLine>
+                    @if(att.invoice_link) {
+                      <a [href]="att.invoice_link" target="_blank" class="link">Visualizar Fatura</a>
+                    } @else {
+                      <span class="value-muted">Não informado</span>
+                    }
+                  </div>
+                </mat-list-item>
+                <mat-list-item role="listitem">
+                  <mat-icon matListItemIcon>payment</mat-icon>
+                  <div matListItemTitle>Comprovante</div>
+                  <div matListItemLine>
+                    @if(att.payment_receipt_link) {
+                      <a [href]="att.payment_receipt_link" target="_blank" class="link">Visualizar Comprovante</a>
+                    } @else {
+                      <span class="value-muted">Não informado</span>
+                    }
+                  </div>
+                </mat-list-item>
+              </mat-list>
+            </div>
+          </div>
+
+          <!-- Coluna da Direita -->
+          <div class="grid-column">
+            <div class="details-section">
+              <h3 class="section-title">Notas de Progresso</h3>
+              <mat-list role="list" class="notes-list">
+                @for (note of att.progress_notes; track note.id) {
+                  <mat-list-item>
+                    <mat-icon matListItemIcon>comment</mat-icon>
+                    <div matListItemTitle>{{ note.note }}</div>
+                    <div matListItemLine>
+                      <span>{{ note.user.full_name }} - {{ note.created_at | date:'short' }}</span>
+                      @if(note.hours_spent) {
+                        <span> - ({{ note.hours_spent }}h)</span>
+                      }
+                    </div>
+                  </mat-list-item>
+                } @empty {
+                  <p class="value-muted">Nenhuma nota de progresso registrada.</p>
+                }
+              </mat-list>
+            </div>
+
+            <div class="details-section">
+              <h3 class="section-title">Notas de Bloqueio</h3>
+              <mat-list role="list" class="notes-list">
+                @for (note of att.blocker_notes; track note.id) {
+                  <mat-list-item [class.resolved-note]="note.is_resolved">
+                    <mat-icon matListItemIcon>{{ note.is_resolved ? 'check_circle' : 'error' }}</mat-icon>
+                    <div matListItemTitle>{{ note.note }}</div>
+                    <div matListItemLine>
+                      <span>{{ note.user.full_name }} - {{ note.created_at | date:'short' }}</span>
+                      @if (note.is_resolved) {
+                        <span class="resolved-by"> (Resolvido por {{ note.resolved_by_user?.full_name }} em {{ note.resolved_at | date:'short' }})</span>
+                      }
+                    </div>
+                  </mat-list-item>
+                } @empty {
+                  <p class="value-muted">Nenhum bloqueio registrado.</p>
+                }
+              </mat-list>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="dialogRef.close()">Fechar</button>
+  <!-- Ação de editar visível apenas para Admin e Colaborador -->
+  @if (authService.isAdmin() || authService.currentUserRole() === 'colaborador') {
+    <button mat-flat-button color="primary" (click)="openEditDialog()">
+      <mat-icon>edit</mat-icon> Editar
+    </button>
+  }
+</mat-dialog-actions>

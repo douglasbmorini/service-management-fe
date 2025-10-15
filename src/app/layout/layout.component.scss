@@ -1,0 +1,44 @@
+.spacer {
+  flex: 1 1 auto;
+}
+
+main {
+  padding: 2rem;
+}
+
+mat-toolbar {
+  /*
+    Analisando a referência do site do Angular Material, o header utiliza
+    as cores de "container" do tema (ex: --mat-sys-primary-container),
+    que são mais sutis e adequadas para superfícies grandes.
+    Aplicamos essas cores manualmente para replicar esse comportamento.
+  */
+  gap: .75rem;
+  background-color: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+
+  /*
+    Ajuste no estilo do link ativo para que ele se destaque sobre o fundo
+    do container. Usamos a cor do texto (on-primary-container) com transparência
+    para criar um realce sutil, que funciona em qualquer tema.
+  */
+  a[mat-button].active-link {
+    font-weight: 500;
+    background-color: color-mix(in srgb, var(--mat-sys-on-primary-container) 20%, transparent);
+  }
+}
+
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.user-name-link {
+  text-decoration: none;
+  color: inherit;
+  padding: 6px 12px;
+  border-radius: 4px;
+  &:hover {
+    background-color: color-mix(in srgb, var(--mat-sys-on-primary-container) 10%, transparent);
+  }
+}

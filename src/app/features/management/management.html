@@ -1,0 +1,195 @@
+<h2>Painel Gerencial</h2>
+
+@if (state().isLoading) {
+  <p>Carregando dados gerenciais...</p>
+} @else if (state().error) {
+  <p class="error-message">{{ state().error }}</p>
+} @else {
+  <mat-tab-group [(selectedIndex)]="selectedTabIndex">
+    <!-- Aba de Gerenciamento de Clientes (Visível para Admin e Colaborador) -->
+    <mat-tab label="Gerenciar Atendimentos">
+      <div class="tab-content">
+        <div class="header-actions">
+          <h3>Todos os Atendimentos</h3>
+          <button mat-flat-button color="primary" (click)="openCreateAttendanceDialog()">
+            <mat-icon>add</mat-icon>
+            Novo Atendimento
+          </button>
+        </div>
+
+        <table mat-table [dataSource]="state().attendances" class="mat-elevation-z2">
+          <!-- Colunas da Tabela -->
+          <ng-container matColumnDef="service_description">
+            <th mat-header-cell *matHeaderCellDef> Serviço </th>
+            <td mat-cell *matCellDef="let att"> {{att.service_description}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="client">
+            <th mat-header-cell *matHeaderCellDef> Cliente </th>
+            <td mat-cell *matCellDef="let att"> {{att.client.company_name}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef> Status </th>
+            <td mat-cell *matCellDef="let att"> {{att.status.replace('_', ' ') | titlecase}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="due_date">
+            <th mat-header-cell *matHeaderCellDef> Vencimento </th>
+            <td mat-cell *matCellDef="let att"> {{att.due_date | date}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef> Ações </th>
+            <td mat-cell *matCellDef="let att">
+              <button mat-icon-button color="primary" (click)="openEditAttendanceDialog(att)" title="Editar Atendimento">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <!-- Botões de ação de status -->
+              @switch (att.status) {
+                @case ('PROPOSTA_CRIADA') {
+                  <button mat-icon-button color="accent" (click)="sendProposal(att)" title="Enviar Proposta">
+                    <mat-icon>send</mat-icon>
+                  </button>
+                }
+                @case ('PROPOSTA_ENVIADA') {
+                  <button mat-icon-button color="primary" (click)="acceptProposal(att)" title="Aceitar Proposta">
+                    <mat-icon>check_circle</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="refuseProposal(att)" title="Recusar Proposta">
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                }
+                @case ('PROPOSTA_ACEITA') {
+                  <button mat-icon-button color="primary" (click)="openEditAttendanceDialog(att)" title="Iniciar Execução">
+                    <mat-icon>play_arrow</mat-icon>
+                  </button>
+                }
+                @case ('EM_EXECUCAO') {
+                  <!-- Botões para Faturar, Finalizar, etc. (via edição do formulário) -->
+                }
+                @case ('PENDENTE') {
+                  <!-- Botões para resolver pendência (via edição do formulário) -->
+                }
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="attendanceDisplayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: attendanceDisplayedColumns;"></tr>
+        </table>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Gerenciar Clientes">
+      <div class="tab-content">
+        <div class="header-actions">
+          <h3>Todos os Clientes</h3>
+          <button mat-flat-button color="primary" (click)="openCreateClientDialog()">
+            <mat-icon>add</mat-icon>
+            Novo Cliente
+          </button>
+        </div>
+
+        <table mat-table [dataSource]="state().clients" class="mat-elevation-z2">
+          <!-- Colunas da Tabela -->
+          <ng-container matColumnDef="company_name">
+            <th mat-header-cell *matHeaderCellDef> Empresa </th>
+            <td mat-cell *matCellDef="let client"> {{client.company_name}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="contact_name">
+            <th mat-header-cell *matHeaderCellDef> Contato </th>
+            <td mat-cell *matCellDef="let client"> {{client.contact_name}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="contact_email">
+            <th mat-header-cell *matHeaderCellDef> Email </th>
+            <td mat-cell *matCellDef="let client"> {{client.contact_email}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef> Status </th>
+            <td mat-cell *matCellDef="let client"> {{client.status}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef> Ações </th>
+            <td mat-cell *matCellDef="let client">
+              <button mat-icon-button color="primary" (click)="openEditClientDialog(client)" title="Editar Cliente">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <!-- Botão de deletar visível apenas para Admin, conforme regra da API -->
+              @if (authService.isAdmin()) {
+                <button mat-icon-button color="warn" (click)="openDeleteClientDialog(client)" title="Deletar Cliente">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="clientDisplayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: clientDisplayedColumns;"></tr>
+        </table>
+      </div>
+    </mat-tab>
+
+    <!-- Aba de Gerenciamento de Usuários (Visível apenas para Admin) -->
+    @if (authService.isAdmin()) {
+      <mat-tab label="Gerenciar Usuários">
+        <div class="tab-content">
+          <div class="header-actions">
+            <h3>Todos os Usuários</h3>
+            <button mat-flat-button color="primary" (click)="openCreateUserDialog()">
+              <mat-icon>add</mat-icon>
+              Novo Usuário
+            </button>
+          </div>
+
+          <table mat-table [dataSource]="state().users" class="mat-elevation-z2">
+            <!-- Colunas da Tabela -->
+            <ng-container matColumnDef="full_name">
+              <th mat-header-cell *matHeaderCellDef> Nome Completo </th>
+              <td mat-cell *matCellDef="let user"> {{user.full_name}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="email">
+              <th mat-header-cell *matHeaderCellDef> Email </th>
+              <td mat-cell *matCellDef="let user"> {{user.email}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="role">
+              <th mat-header-cell *matHeaderCellDef> Perfil </th>
+              <td mat-cell *matCellDef="let user"> {{user.role}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="is_active">
+              <th mat-header-cell *matHeaderCellDef> Ativo </th>
+              <td mat-cell *matCellDef="let user">
+                <mat-icon [color]="user.is_active ? 'primary' : 'warn'">
+                  {{ user.is_active ? 'check_circle' : 'cancel' }}
+                </mat-icon>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef> Ações </th>
+              <td mat-cell *matCellDef="let user">
+                <button mat-icon-button color="primary" (click)="openEditUserDialog(user)" title="Editar Usuário">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <!-- Admin não pode deletar a si mesmo, conforme regra da API -->
+                <button mat-icon-button color="warn" (click)="openDeleteUserDialog(user)" [disabled]="authService.currentUser()?.id === user.id" title="Deletar Usuário">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="userDisplayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: userDisplayedColumns;"></tr>
+          </table>
+        </div>
+      </mat-tab>
+    }
+  </mat-tab-group>
+}

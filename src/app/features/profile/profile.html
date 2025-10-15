@@ -1,0 +1,74 @@
+<div class="profile-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Meu Perfil</mat-card-title>
+      <mat-card-subtitle>Gerencie suas informações pessoais e de acesso.</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="profileForm" id="profile-form" (ngSubmit)="onSubmit()">
+        <h3 class="form-subtitle">Informações Pessoais</h3>
+
+        <mat-form-field>
+          <mat-label>Nome Completo</mat-label>
+          <input matInput formControlName="full_name" required>
+          @if (profileForm.get('full_name')?.hasError('required')) {
+            <mat-error>O nome é obrigatório.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" required type="email">
+          @if (profileForm.get('email')?.hasError('required')) {
+            <mat-error>O email é obrigatório.</mat-error>
+          }
+          @if (profileForm.get('email')?.hasError('email')) {
+            <mat-error>Por favor, insira um email válido.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Telefone</mat-label>
+          <input matInput formControlName="phone_number" required mask="(00) 0000-0000||(00) 00000-0000">
+          @if (profileForm.get('phone_number')?.hasError('required')) {
+            <mat-error>O telefone é obrigatório.</mat-error>
+          }
+        </mat-form-field>
+
+        <h3 class="form-subtitle">Alterar Senha</h3>
+
+        <div formGroupName="passwordGroup" class="password-group">
+          <mat-form-field>
+            <mat-label>Nova Senha</mat-label>
+            <input matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'">
+            <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" [attr.aria-label]="'Esconder senha'" [attr.aria-pressed]="hidePassword">
+              <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+            </button>
+            @if (profileForm.get('passwordGroup.password')?.hasError('minlength')) {
+              <mat-error>A senha deve ter no mínimo 8 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Confirmar Nova Senha</mat-label>
+            <input matInput formControlName="confirmPassword" [type]="hidePassword ? 'password' : 'text'" [errorStateMatcher]="immediateErrorMatcher">
+            @if (profileForm.get('passwordGroup.confirmPassword')?.hasError('required')) {
+              <mat-error>A confirmação é obrigatória.</mat-error>
+            }
+            @if (profileForm.get('passwordGroup')?.hasError('passwordMismatch') && !profileForm.get('passwordGroup.confirmPassword')?.hasError('required')) {
+              <mat-error>As senhas não correspondem.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button mat-flat-button color="primary" form="profile-form" type="submit" [disabled]="profileForm.invalid || isSaving">
+        {{ isSaving ? 'Salvando...' : 'Salvar Alterações' }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

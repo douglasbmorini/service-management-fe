@@ -1,0 +1,123 @@
+@if (financials; as f) {
+  <div class="collaborator-financials-container">
+    <div class="header">
+      <h2>{{ f.collaborator_name }}</h2>
+      <p>Resumo Financeiro no Período</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <mat-card class="summary-card received">
+        <mat-card-header>
+          <mat-card-title>Total Líquido Recebido</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>{{ (f.summary.total_net_received || 0) | currency:'BRL' }}</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card invoiced">
+        <mat-card-header>
+          <mat-card-title>Valor a Receber</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>{{ (f.summary.total_to_receive || 0) | currency:'BRL' }}</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card in-progress">
+        <mat-card-header>
+          <mat-card-title>Valor em Andamento</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>{{ (f.summary.total_in_progress || 0) | currency:'BRL' }}</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    @if (f.entries && f.entries.length > 0) {
+      <mat-card class="attendances-card">
+        <mat-card-header>
+          <mat-card-title>Detalhes dos Atendimentos</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-list>
+            @for (entry of f.entries; track entry.attendance_id) {
+              <mat-list-item class="detailed-item">
+                <div class="item-main-content">
+                  <div class="item-header">
+                    <span class="item-title">{{ entry.service_description }}</span>
+                    <mat-chip [ngClass]="getStatusClass(entry.status)" selected>{{ entry.status.replace('_', ' ') | titlecase }}</mat-chip>
+                  </div>
+                  <div class="financial-details">
+                    <div class="financial-value">
+                      <span class="label">Valor Bruto</span>
+                      <span>{{ entry.financial_value | currency:'BRL' }}</span>
+                    </div>
+                    @if (entry.status === 'FATURADA' || entry.status === 'FINALIZADA') {
+                      <div class="financial-value net">
+                        <span class="label">Valor Líquido</span>
+                        <span>{{ getNetValue(entry) | currency:'BRL' }}</span>
+                      </div>
+                    } @else if (entry.status === 'EM_EXECUCAO' || entry.status === 'PENDENTE') {
+                      <div class="financial-value">
+                        <span class="label">Valor Projetado</span>
+                        <span>{{ entry.financial_value | currency:'BRL' }}</span>
+                      </div>
+                    }
+                  </div>
+                  @if (entry.service_discounts && entry.service_discounts.length > 0) {
+                    <mat-expansion-panel class="discounts-panel">
+                      <mat-expansion-panel-header>
+                        <mat-panel-title>
+                          Detalhes dos Descontos
+                        </mat-panel-title>
+                      </mat-expansion-panel-header>
+                      <div class="discounts-content">
+                        @if (entry.service_discounts && entry.service_discounts.length > 0) {
+                          <div class="discount-category">
+                            <h4 class="discount-subtitle">Descontos do Atendimento</h4>
+                            <ul class="discounts-list">
+                              @for(discount of entry.service_discounts; track discount.id) {
+                                <li><span>{{ discount.description }}</span> <span class="discount-amount">-{{ discount.amount | currency:'BRL' }}</span></li>
+                              }
+                            </ul>
+                          </div>
+                        }
+                      </div>
+                    </mat-expansion-panel>
+                  }
+                </div>
+              </mat-list-item>
+            }
+          </mat-list>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <div class="empty-state">
+        <p>Nenhum atendimento encontrado para este colaborador no período selecionado.</p>
+      </div>
+    }
+
+    <!-- User Discounts Section -->
+    @if (f.user_discounts && f.user_discounts.length > 0) {
+      <mat-card class="user-discounts-card">
+        <mat-card-header>
+          <mat-card-title>Taxas Mensais Aplicadas</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <ul class="discounts-list">
+            @for(discount of f.user_discounts; track discount.id) {
+              <li><span>{{ discount.description }}</span> <span class="discount-amount">-{{ discount.amount | currency:'BRL' }}</span></li>
+            }
+          </ul>
+        </mat-card-content>
+      </mat-card>
+    }
+
+  </div>
+} @else {
+  <div class="empty-state">
+    <p>Selecione um colaborador para ver seus detalhes financeiros.</p>
+  </div>
+}
