@@ -17,7 +17,8 @@
 
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  /* Cria uma grade com o card principal ocupando toda a primeira linha */
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 1.5rem;
 }
 
@@ -30,6 +31,12 @@
   // Define a local CSS variable for the card's status color
   --card-status-color: var(--status-default);
 
+  &.final-net {
+    grid-column: 1 / -1; /* Ocupa todas as colunas */
+    --card-status-color: var(--mat-sys-primary);
+    background-color: var(--mat-sys-primary-container);
+  }
+
   &.received {
     --card-status-color: var(--status-finished);
   }
@@ -40,6 +47,15 @@
 
   &.in-progress {
     --card-status-color: var(--status-executing);
+  }
+
+  &.user-discounts {
+    --card-status-color: var(--mat-sys-error);
+  }
+
+  &.secondary p {
+    font-size: 1.5rem; /* Diminui a fonte dos cards secundários */
+    color: var(--mat-sys-on-surface-variant);
   }
 
   // Apply the local variable to the border
@@ -54,7 +70,7 @@
   mat-card-content p {
     font-size: 2rem;
     font-weight: bold;
-    margin: 0;
+    margin: 0.5rem 0 0;
     // Use a more prominent color for the value, which adapts to the theme
     color: var(--mat-sys-primary);
   }
@@ -155,6 +171,12 @@
   span:not(.label) {
     font-size: 1.1rem;
     font-weight: 500;
+  }
+
+  .hourly-rate-label {
+    font-size: 0.8rem;
+    color: var(--mat-sys-on-surface-variant);
+    margin-left: 0.5rem;
   }
 
   &.net span:not(.label) {

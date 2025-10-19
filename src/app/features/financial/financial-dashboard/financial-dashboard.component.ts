@@ -1,6 +1,7 @@
 import {Component, effect, inject, OnInit, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {MatDialog} from '@angular/material/dialog';
+import {debounceTime, distinctUntilChanged, filter} from "rxjs";
 import {MatCardModule} from "@angular/material/card";
 import {MatDatepickerModule} from "@angular/material/datepicker";
 import {MatFormFieldModule} from "@angular/material/form-field";
@@ -13,11 +14,17 @@ import {AuthService} from "../../../core/services/auth.service";
 import {UserService} from "../../../core/services/user.service";
 import {User} from "../../../core/models/user.model";
 import {FinancialOverviewComponent} from "../financial-overview/financial-overview.component";
-import {CollaboratorFinancialsComponent} from "../collaborator-financials/collaborator-financials.component";
+import {CollaboratorFinancialsComponent} from '../collaborator-financials/collaborator-financials.component';
 import {AttendanceService} from "../../../core/services/attendance.service";
-import {CollaboratorFinancials, DetailedEntry, MonthlyChartData} from "../../../core/models/financial.model";
+import {CollaboratorFinancials, MonthlyChartData} from '../../../core/models/financial.model';
 import {AddUserDiscountFormComponent} from "../add-user-discount-form/add-user-discount-form.component";
-import {MatButton} from '@angular/material/button';
+import {MatButton, MatIconButton} from '@angular/material/button';
+import {Attendance, AttendanceStatus} from '../../../core/models/attendance.model';
+import {MatTableModule} from '@angular/material/table';
+import {CurrencyPipe, DatePipe, TitleCasePipe} from '@angular/common';
+import {MatIconModule} from '@angular/material/icon';
+import {MatSnackBar} from "@angular/material/snack-bar";
+import {AddDiscountFormComponent} from '../add-discount-form/add-discount-form.component';
 
 // Helper function to format date to 'YYYY-MM-DD'
 const formatDate = (date: Date): string => {
@@ -30,22 +37,22 @@ const formatDate = (date: Date): string => {
 interface FinancialState {
     collaboratorFinancials: CollaboratorFinancials | null;
     collaborators: User[];
+    filteredAttendances: Attendance[]; // Nova propriedade para a tabela reativa
     isLoading: boolean;
     error: string | null;
-    selectedCollaboratorId: number | null;
-    // Enhanced metrics
     receivedInPeriod: number;
     overduePayments: number;
     upcomingReceivables: number;
     inProgressValue: number;
     monthlyChartData: MonthlyChartData[];
-    detailedEntries: DetailedEntry[];
 }
+
+type DateRange = { start: Date | null, end: Date | null };
 
 @Component({
     selector: 'app-financial-dashboard',
     standalone: true,
-  imports: [ReactiveFormsModule, MatCardModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, FinancialOverviewComponent, CollaboratorFinancialsComponent, MatButton],
+  imports: [ReactiveFormsModule, MatCardModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, FinancialOverviewComponent, CollaboratorFinancialsComponent, MatButton, MatTableModule, TitleCasePipe, MatIconModule, DatePipe, CurrencyPipe, MatIconButton],
     templateUrl: './financial-dashboard.component.html',
     styleUrls: ['./financial-dashboard.component.scss']
 })
@@ -55,6 +62,7 @@ export class FinancialDashboardComponent implements OnInit {
     protected authService = inject(AuthService);
     private userService = inject(UserService);
     private dialog = inject(MatDialog);
+    private snackBar = inject(MatSnackBar);
 
     private readonly today = new Date();
     private readonly firstDayOfMonth = new Date(this.today.getFullYear(), this.today.getMonth(), 1);
@@ -62,46 +70,72 @@ export class FinancialDashboardComponent implements OnInit {
     state = signal<FinancialState>({
         collaboratorFinancials: null,
         collaborators: [],
+        filteredAttendances: [],
         isLoading: true,
         error: null,
-        selectedCollaboratorId: null,
         receivedInPeriod: 0,
         overduePayments: 0,
         upcomingReceivables: 0,
         inProgressValue: 0,
-        monthlyChartData: [],
-        detailedEntries: []
+        monthlyChartData: []
     });
 
-    range = new FormGroup({
+    // O FormGroup para o filtro de data
+    rangeForm = new FormGroup({
         start: new FormControl<Date | null>(this.firstDayOfMonth),
         end: new FormControl<Date | null>(this.today),
     });
 
+    // Filtros como signals separados
+    selectedCollaboratorId = signal<number | null>(null);
+    selectedStatus = signal<string | null>(null); // Novo filtro de status
+    dateRange = signal<DateRange>({
+      start: this.firstDayOfMonth,
+      end: this.today
+    });
+
+    allStatuses = [
+      AttendanceStatus.EM_EXECUCAO,
+      AttendanceStatus.PENDENTE,
+      AttendanceStatus.FATURADA,
+      AttendanceStatus.FINALIZADA
+    ];
+    displayedColumns: string[] = ['client', 'description', 'status', 'due_date', 'value', 'actions'];
+
+    constructor() {
+      // Conecta o formulário de data ao signal de forma reativa e segura
+      this.rangeForm.valueChanges.pipe(
+        debounceTime(400),
+        filter((value): value is { start: Date, end: Date } => !!value.start && !!value.end),
+        filter(value => value.start.getTime() <= value.end.getTime()),
+        distinctUntilChanged((prev, curr) =>
+          prev.start.getTime() === curr.start.getTime() && prev.end.getTime() === curr.end.getTime()
+        )
+      ).subscribe(value => this.dateRange.set(value));
+
+      // Efeito que reage a qualquer mudança nos filtros e recarrega os dados.
+      // Deve ser chamado no construtor para ter acesso ao contexto de injeção.
+      effect(() => {
+        const selectedId = this.selectedCollaboratorId(); // Lê o signal do filtro
+        const range = this.dateRange(); // Lê o signal do filtro
+        const status = this.selectedStatus(); // Lê o novo signal de status
+
+        if (range.start && range.end) {
+          this.reloadDataForCurrentView(selectedId, formatDate(range.start), formatDate(range.end), status);
+        }
+      });
+    }
+
     ngOnInit(): void {
         this.loadInitialCollaborators();
-
-        // Efeito que reage a qualquer mudança nos filtros e recarrega os dados.
-        effect(() => {
-            const selectedId = this.state().selectedCollaboratorId;
-            const dateRange = this.range.value;
-
-            if (dateRange.start && dateRange.end) {
-                this.reloadDataForCurrentView(formatDate(dateRange.start), formatDate(dateRange.end));
-            }
-        }, { allowSignalWrites: true }); // Necessário porque o carregamento de dados atualiza o estado (sinal).
 
         // Atualiza o estado do colaborador quando o usuário logado não é admin.
         const currentUser = this.authService.currentUser();
         if (!this.authService.isAdmin() && currentUser) {
-            this.state.update(s => ({ ...s, selectedCollaboratorId: currentUser.id }));
+            this.selectedCollaboratorId.set(currentUser.id);
         }
 
         // Inicia o carregamento de dados com os valores iniciais dos filtros.
-        const { start, end } = this.range.value;
-        if (start && end) {
-            this.reloadDataForCurrentView(formatDate(start), formatDate(end));
-        }
     }
 
     private loadInitialCollaborators(): void {
@@ -119,21 +153,23 @@ export class FinancialDashboardComponent implements OnInit {
    * It re-triggers the data loading process with the current filters.
    */
   loadFinancialData(): void {
-    const { start, end } = this.range.value;
+    const { start, end } = this.dateRange();
     if (start && end) {
-      this.reloadDataForCurrentView(formatDate(start), formatDate(end));
+      this.reloadDataForCurrentView(this.selectedCollaboratorId(), formatDate(start), formatDate(end), this.selectedStatus());
     }
   }
 
   openAddUserDiscountDialog(): void {
-    const selectedCollaboratorId = this.state().selectedCollaboratorId;
-    const selectedCollaborator = this.state().collaborators.find(c => c.id === selectedCollaboratorId);
+    const selectedCollaboratorId = this.selectedCollaboratorId();
+    // Busca o colaborador na lista de colaboradores carregada
+    const collaborators = this.state().collaborators;
+    const selectedCollaborator = collaborators.find(c => c.id === selectedCollaboratorId);
 
     if (!selectedCollaborator) return;
 
     const dialogRef = this.dialog.open(AddUserDiscountFormComponent, {
       width: '500px',
-      data: {
+      data: { // Passa os dados necessários para o dialog
         userId: selectedCollaborator.id,
         userName: selectedCollaborator.full_name
       }
@@ -146,16 +182,35 @@ export class FinancialDashboardComponent implements OnInit {
     });
   }
 
+  openAddDiscountDialog(attendance: Attendance): void {
+    const dialogRef = this.dialog.open(AddDiscountFormComponent, {
+      width: '500px',
+      data: {
+        attendanceId: attendance.id,
+        serviceDescription: attendance.service_description,
+        billingType: attendance.billing_type
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        // Quando um desconto é adicionado, recarregamos todos os dados financeiros,
+        // pois isso pode afetar os cards de resumo (ex: Valor em Andamento).
+        this.loadFinancialData();
+      }
+    });
+  }
+
   /**
    * Decide qual conjunto de dados carregar com base na visão atual (geral ou por colaborador).
    */
-  private reloadDataForCurrentView(startDate: string, endDate: string): void {
-    const selectedCollaboratorId = this.state().selectedCollaboratorId;
+  private reloadDataForCurrentView(selectedCollaboratorId: number | null, startDate: string, endDate: string, status: string | null): void {
     if (selectedCollaboratorId) {
       this.loadCollaboratorData(selectedCollaboratorId, startDate, endDate);
     } else {
       // Esta branch só é executada se for admin na visão geral.
       this.loadGeneralOverviewData(startDate, endDate);
+      this.loadFilteredAttendances(startDate, endDate, status);
     }
   }
 
@@ -173,7 +228,6 @@ export class FinancialDashboardComponent implements OnInit {
           overduePayments: parseFloat(overview.totals.overdue_payments) || 0,
           upcomingReceivables: parseFloat(overview.totals.upcoming_receivables) || 0,
           inProgressValue: parseFloat(overview.totals.in_progress_value) || 0,
-          detailedEntries: overview.detailed_entries || [],
           monthlyChartData: overview.monthly_invoiced_data,
           isLoading: false
         }));
@@ -182,13 +236,39 @@ export class FinancialDashboardComponent implements OnInit {
     });
   }
 
-    onCollaboratorChange(collaboratorId: number | null): void {
-    this.state.update(s => ({ ...s, selectedCollaboratorId: collaboratorId }));
-    const { start, end } = this.range.value;
-    if (start && end) {
-      this.reloadDataForCurrentView(formatDate(start), formatDate(end));
+  private loadFilteredAttendances(startDate: string, endDate: string, status: string | null): void {
+    // Não precisa setar isLoading aqui, pois a chamada principal já faz isso.
+    const filters = {
+      start_date: startDate,
+      end_date: endDate,
+      status: status,
+      collaboratorId: null // Na visão geral, não filtramos por colaborador aqui
+    };
+
+    this.attendanceService.getAttendances(filters).subscribe({
+      next: (attendances) => {
+        this.state.update(s => ({ ...s, filteredAttendances: attendances }));
+      },
+      error: () => {
+        // Atualiza apenas a parte de atendimentos da tabela em caso de erro
+        this.state.update(s => ({ ...s, filteredAttendances: [] }));
+        this.snackBar.open('Falha ao carregar a lista detalhada de atendimentos.', 'Fechar', { duration: 4000 });
+      }
+    });
+  }
+
+  getEntryValue(entry: Attendance): number {
+    if (entry.billing_type === 'HOURLY') {
+      return entry.collaborators.reduce((total, collaborator) => {
+        const collaboratorHours = entry.progress_notes
+          .filter(note => note.user.id === collaborator.user_id && note.hours_spent)
+          .reduce((sum, note) => sum + parseFloat(String(note.hours_spent)), 0);
+        const hourlyRate = parseFloat(String(collaborator.hourly_rate || 0));
+        return total + (collaboratorHours * hourlyRate);
+      }, 0);
     }
-    }
+    return entry.total_proposal_value || 0;
+  }
 
     private loadCollaboratorData(userId: number, startDate: string, endDate: string): void {
     this.state.update(s => ({ ...s, isLoading: true, error: null }));

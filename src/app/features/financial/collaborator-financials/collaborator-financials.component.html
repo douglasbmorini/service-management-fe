@@ -7,12 +7,31 @@
 
     <!-- Summary Cards -->
     <div class="summary-cards">
-      <mat-card class="summary-card received">
+      <!-- Card Principal: O valor final que o colaborador de fato recebe -->
+      <mat-card class="summary-card final-net">
         <mat-card-header>
-          <mat-card-title>Total Líquido Recebido</mat-card-title>
+          <mat-card-title>Valor Final a Receber</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>{{ finalNetValue() | currency:'BRL' }}</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card received secondary">
+        <mat-card-header>
+          <mat-card-title>Receita dos Projetos (Líquido)</mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <p>{{ (f.summary.total_net_received || 0) | currency:'BRL' }}</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card user-discounts secondary">
+        <mat-card-header>
+          <mat-card-title>Taxas Mensais</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>- {{ (f.summary.total_user_discounts || 0) | currency:'BRL' }}</p>
         </mat-card-content>
       </mat-card>
 
@@ -53,6 +72,11 @@
                     <div class="financial-value">
                       <span class="label">Valor Bruto</span>
                       <span>{{ entry.financial_value | currency:'BRL' }}</span>
+                    @if (entry.billing_type === 'HOURLY' && getCollaboratorHourlyRate(entry.attendance_id); as hourlyRate) { // Correção na condição
+                      <span class="hourly-rate-label">
+                        ({{ hourlyRate | currency:'BRL' }}/hora)
+                      </span>
+                    }
                     </div>
                     @if (entry.status === 'FATURADA' || entry.status === 'FINALIZADA') {
                       <div class="financial-value net">

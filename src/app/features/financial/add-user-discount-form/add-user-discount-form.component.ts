@@ -8,7 +8,7 @@ import {
   MatDialogRef,
   MatDialogTitle
 } from '@angular/material/dialog';
-import {finalize} from 'rxjs';
+import {catchError, finalize, forkJoin, of} from 'rxjs';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
@@ -18,6 +18,14 @@ import {MatIconModule} from "@angular/material/icon";
 import {MatSelectModule} from "@angular/material/select";
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import {UserDiscountCreate} from "../../../core/models/financial.model";
+
+// Helper function to format date to 'YYYY-MM-DD'
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 @Component({
   selector: 'app-add-user-discount-form',
@@ -44,7 +52,7 @@ export class AddUserDiscountFormComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
 
   // Constants for quick user discounts
-  private readonly GMAIL_TOOLS_CHARGE: UserDiscountCreate = { description: 'Ferramentas Gmail', amount: 80.00 };
+  private readonly GMAIL_TOOLS_CHARGE: Omit<UserDiscountCreate, 'applied_date'> = { description: 'Ferramentas Gmail', amount: 80.00 };
 
   userDiscountForm!: FormGroup;
   isSaving = false;
@@ -105,12 +113,17 @@ export class AddUserDiscountFormComponent implements OnInit {
     const quickUserDiscountsValue = this.userDiscountForm.get('quickUserDiscounts')?.value;
     const customUserDiscountsValue = this.userDiscountForm.get('customUserDiscounts')?.value;
 
+    const today = formatDate(new Date());
+
     if (quickUserDiscountsValue.gmailTools) {
-      payload.push(this.GMAIL_TOOLS_CHARGE);
+      payload.push({ ...this.GMAIL_TOOLS_CHARGE, applied_date: today });
     }
 
     if (customUserDiscountsValue && customUserDiscountsValue.length > 0) {
-      payload.push(...customUserDiscountsValue);
+      const validCustomDiscounts = this.customUserDiscounts.controls
+        .filter(control => control.valid)
+        .map(control => ({ ...control.value, applied_date: today }));
+      payload.push(...validCustomDiscounts);
     }
 
     if (payload.length === 0) {
@@ -119,18 +132,34 @@ export class AddUserDiscountFormComponent implements OnInit {
       return;
     }
 
-    this.financialService.addUserDiscount(this.data.userId, payload).pipe(
+    // Cria um array de observables, um para cada chamada de API
+    const discountRequests = payload.map(discount =>
+      this.financialService.addUserDiscount(this.data.userId, discount).pipe(
+        catchError(err => {
+          console.error(`Falha ao adicionar desconto "${discount.description}"`, err);
+          // Retorna um observable de sucesso com um erro para que o forkJoin não pare
+          return of({ error: true, description: discount.description });
+        })
+      )
+    );
+
+    // Executa todas as chamadas em paralelo
+    forkJoin(discountRequests).pipe(
       finalize(() => this.isSaving = false)
     ).subscribe({
-      next: () => {
-        this.snackBar.open('Taxa(s) adicionada(s) com sucesso!', 'Fechar', { duration: 3000 });
-        this.dialogRef.close(true);
+      next: (results) => {
+        const failed = results.filter((r: any) => r?.error);
+        if (failed.length > 0) {
+          const failedDescriptions = failed.map((f: any) => f.description).join(', ');
+          this.snackBar.open(
+            `Algumas taxas falharam: ${failedDescriptions}. As outras foram salvas.`,
+            'Fechar', { duration: 8000, panelClass: 'warning-snackbar' }
+          );
+        } else {
+          this.snackBar.open('Taxa(s) adicionada(s) com sucesso!', 'Fechar', { duration: 3000 });
+        }
+        this.dialogRef.close(true); // Fecha e recarrega os dados mesmo se houver falha parcial
       },
-      error: (err: any) => {
-        console.error(err);
-        const message = err.error?.detail || 'Erro ao adicionar taxa. Tente novamente.';
-        this.snackBar.open(message, 'Fechar', { duration: 4000, panelClass: 'error-snackbar' });
-      }
     });
   }
 }

@@ -19,6 +19,14 @@ import {MatSelectModule} from "@angular/material/select";
 import {MatIconModule} from "@angular/material/icon";
 import {DiscountCreate} from "../../../core/models/financial.model";
 
+// Helper function to format date to 'YYYY-MM-DD'
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 @Component({
   selector: 'app-add-discount-form',
   standalone: true,
@@ -44,15 +52,16 @@ export class AddDiscountFormComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
 
   // Constants for quick discounts
-  private readonly ISS_DISCOUNT: DiscountCreate = { description: 'Imposto Sobre Serviço (ISS)', value: 2, discount_type: 'PERCENTAGE' };
+  private readonly ISS_DISCOUNT: Omit<DiscountCreate, 'applied_date'> = { description: 'Imposto Sobre Serviço (ISS)', value: 2, discount_type: 'PERCENTAGE' };
 
   discountForm!: FormGroup;
   isSaving = false;
 
   constructor(
     public dialogRef: MatDialogRef<AddDiscountFormComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { attendanceId: number; serviceDescription: string }
-  ) {}
+    @Inject(MAT_DIALOG_DATA) public data: { attendanceId: number; serviceDescription: string; }
+  ) {
+  }
 
   ngOnInit(): void {
     this.discountForm = this.fb.group({
@@ -107,8 +116,10 @@ export class AddDiscountFormComponent implements OnInit {
     const quickDiscountsValue = this.discountForm.get('quickDiscounts')?.value;
     const customDiscountsValue = this.discountForm.get('customDiscounts')?.value;
 
+    const today = formatDate(new Date());
+
     if (quickDiscountsValue.iss) {
-      payload.push(this.ISS_DISCOUNT);
+      payload.push({ ...this.ISS_DISCOUNT, applied_date: today });
     }
 
     // Adiciona apenas os descontos personalizados que são válidos
@@ -116,8 +127,14 @@ export class AddDiscountFormComponent implements OnInit {
       // Filtra para garantir que apenas grupos de formulário válidos sejam adicionados
       const validCustomDiscounts = this.customDiscounts.controls
         .filter(control => control.valid)
-        .map(control => control.value);
+        .map(control => ({ ...control.value, applied_date: today }));
       payload.push(...validCustomDiscounts);
+    }
+
+    if (payload.length === 0) {
+      this.snackBar.open('Nenhum desconto foi adicionado.', 'Fechar', { duration: 4000, panelClass: 'error-snackbar' });
+      this.isSaving = false;
+      return;
     }
 
     this.financialService.addDiscount(this.data.attendanceId, payload).pipe(
@@ -127,11 +144,6 @@ export class AddDiscountFormComponent implements OnInit {
         this.snackBar.open('Desconto adicionado com sucesso!', 'Fechar', { duration: 3000 });
         this.dialogRef.close(true);
       },
-      error: (err) => {
-        console.error(err);
-        const message = err.error?.detail || 'Erro ao adicionar desconto. Tente novamente.';
-        this.snackBar.open(message, 'Fechar', { duration: 4000, panelClass: 'error-snackbar' });
-      }
     });
   }
 }

@@ -1,24 +1,43 @@
 .overview-container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  margin-bottom: 1.5rem;
+  gap: 3rem;
+}
+
+.data-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface);
+  margin: 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  padding-bottom: 0.75rem;
 }
 
 .overview-cards {
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;
-  justify-content: space-between;
 }
 
 .overview-card {
-  flex: 1;
   min-width: 200px;
   text-align: center;
   background-color: var(--mat-sys-surface-container);
   border-left: 5px solid;
 
   --card-status-color: var(--status-default);
+
+  /* Faz os cards da primeira seção ocuparem o espaço igualmente */
+  .data-section:first-of-type & {
+    flex: 1;
+  }
 
   &.overdue {
     --card-status-color: var(--mat-sys-error);

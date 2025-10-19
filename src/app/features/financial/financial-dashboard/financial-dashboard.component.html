@@ -2,15 +2,14 @@
   <header class="financial-header">
     <div class="header-title">
       <h1>Painel Financeiro</h1>
-      @if (state().selectedCollaboratorId && authService.isAdmin()) {
+      @if (selectedCollaboratorId() && authService.isAdmin()) {
         <button mat-stroked-button color="accent" (click)="openAddUserDiscountDialog()">Adicionar Taxa Mensal</button>
       }
     </div>
     <div class="filters">
       <!-- Date Range Filter -->
       <mat-form-field appearance="outline">
-        <mat-label>Período</mat-label>
-        <mat-date-range-input [formGroup]="range" [rangePicker]="picker">
+        <mat-label>Período</mat-label>        <mat-date-range-input [formGroup]="rangeForm" [rangePicker]="picker">
           <input matStartDate formControlName="start" placeholder="Data de início">
           <input matEndDate formControlName="end" placeholder="Data de fim">
         </mat-date-range-input>
@@ -18,11 +17,24 @@
         <mat-date-range-picker #picker></mat-date-range-picker>
       </mat-form-field>
 
+      <!-- Novo Filtro de Status (apenas na visão geral) -->
+      @if (!selectedCollaboratorId()) {
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select [value]="selectedStatus()" (selectionChange)="selectedStatus.set($event.value)">
+            <mat-option [value]="null">Todos os Status</mat-option>
+            @for (status of allStatuses; track status) {
+              <mat-option [value]="status">{{ status.replace('_', ' ') | titlecase }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+
       <!-- Collaborator Filter (Admin only) -->
       @if (authService.isAdmin()) {
         <mat-form-field appearance="outline">
           <mat-label>Colaborador</mat-label>
-          <mat-select [value]="state().selectedCollaboratorId" (selectionChange)="onCollaboratorChange($event.value)">
+          <mat-select [value]="selectedCollaboratorId()" (selectionChange)="selectedCollaboratorId.set($event.value)">
             <mat-option [value]="null">Visão Geral</mat-option>
             @for (collaborator of state().collaborators; track collaborator.id) {
               <mat-option [value]="collaborator.id">{{ collaborator.full_name }}</mat-option>
@@ -45,7 +57,7 @@
     }
 
     @if (!state().isLoading && !state().error) {
-      @if (state().selectedCollaboratorId && state().collaboratorFinancials) {
+      @if (selectedCollaboratorId() && state().collaboratorFinancials) {
         <app-collaborator-financials [financials]="state().collaboratorFinancials"></app-collaborator-financials>
       } @else {
         <app-financial-overview
@@ -54,9 +66,64 @@
           [overduePayments]="state().overduePayments"
           [upcomingReceivables]="state().upcomingReceivables"
           [inProgressValue]="state().inProgressValue"
-          [monthlyChartData]="state().monthlyChartData"
-          [detailedEntries]="state().detailedEntries">
+          [monthlyChartData]="state().monthlyChartData">
         </app-financial-overview>
+
+        <!-- Tabela de Detalhes Reativa -->
+        <mat-card class="table-card">
+          <mat-card-header>
+            <mat-card-title>Detalhes dos Atendimentos no Período</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <table mat-table [dataSource]="state().filteredAttendances" class="mat-elevation-z2">
+
+              <!-- Client Column -->
+              <ng-container matColumnDef="client">
+                <th mat-header-cell *matHeaderCellDef> Cliente </th>
+                <td mat-cell *matCellDef="let element"> {{element.client.company_name}} </td>
+              </ng-container>
+
+              <!-- Description Column -->
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef> Descrição </th>
+                <td mat-cell *matCellDef="let element"> {{element.service_description}} </td>
+              </ng-container>
+
+              <!-- Status Column -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef> Status </th>
+                <td mat-cell *matCellDef="let element"> {{element.status.replace('_', ' ') | titlecase}} </td>
+              </ng-container>
+
+              <!-- Due Date Column -->
+              <ng-container matColumnDef="due_date">
+                <th mat-header-cell *matHeaderCellDef> Data de Vencimento </th>
+                <td mat-cell *matCellDef="let element"> {{element.due_date | date:'dd/MM/yyyy'}} </td>
+              </ng-container>
+
+              <!-- Value Column -->
+              <ng-container matColumnDef="value">
+                <th mat-header-cell *matHeaderCellDef> Valor </th>
+                <td mat-cell *matCellDef="let element"> {{ getEntryValue(element) | currency }} </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef> Ações </th>
+                <td mat-cell *matCellDef="let element">
+                  @if (authService.isAdmin()) {
+                    <button mat-icon-button color="primary" (click)="openAddDiscountDialog(element)" title="Adicionar Desconto ao Serviço">
+                      <mat-icon>money_off</mat-icon>
+                    </button>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+          </mat-card-content>
+        </mat-card>
       }
     }
   </main>
