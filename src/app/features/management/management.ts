@@ -238,19 +238,23 @@ export class Management implements OnInit {
   }
 
   openEditAttendanceDialog(attendance: Attendance): void {
-    let dialogRef: MatDialogRef<any>;
+    const dialogRef = this.dialog.open(AttendanceForm, {
+      width: '600px',
+      data: { attendance }
+    });
 
-    if (attendance.status === AttendanceStatus.PROPOSTA_ACEITA) {
-      dialogRef = this.dialog.open(StartExecutionForm, {
-        width: '600px',
-        data: { attendance }
-      });
-    } else {
-      dialogRef = this.dialog.open(AttendanceForm, {
-        width: '600px',
-        data: { attendance }
-      });
-    }
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadData();
+      }
+    });
+  }
+
+  openStartExecutionDialog(attendance: Attendance): void {
+    const dialogRef = this.dialog.open(StartExecutionForm, {
+      width: '600px',
+      data: { attendance }
+    });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {

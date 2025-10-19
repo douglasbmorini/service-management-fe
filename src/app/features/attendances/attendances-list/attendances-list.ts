@@ -1,4 +1,4 @@
-import {Component, effect, inject, OnInit, signal} from '@angular/core';
+import {Component, computed, effect, inject, OnInit, signal} from '@angular/core';
 import {Attendance, AttendanceStatus} from '../../../core/models/attendance.model';
 import {AttendanceService} from '../../../core/services/attendance.service';
 import {MatDialog} from "@angular/material/dialog";
@@ -15,7 +15,7 @@ import {MatSelectModule} from '@angular/material/select';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatIconModule} from '@angular/material/icon';
 import {MatCardModule} from "@angular/material/card";
-import {TitleCasePipe} from "@angular/common";
+import {AsyncPipe, TitleCasePipe} from "@angular/common";
 import {debounceTime, distinctUntilChanged, filter, map} from "rxjs";
 import {MatDatepickerModule} from "@angular/material/datepicker";
 import {MatInputModule} from "@angular/material/input";
@@ -51,7 +51,7 @@ interface AttendancesState {
     MatProgressBarModule,
     MatIconModule,
     TitleCasePipe,
-    MatCardModule,
+    MatCardModule, // TitleCasePipe is already here
     MatDatepickerModule,
     MatInputModule,
     ReactiveFormsModule,
@@ -85,11 +85,21 @@ export class AttendancesListComponent implements OnInit {
   // Signals for individual filters
   selectedStatus = signal<string | null>(null);
   selectedCollaboratorId = signal<number | null>(null);
-
-  // Signal para o range de datas, que será a fonte da verdade
+  // Signal para o range de datas, que será a fonte da verdade para o filtro de data.
   private dateRange = signal<{ start: Date | null, end: Date | null }>({
     start: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+  });
+
+  // Computed signal that combines all filters into one reactive object
+  private filters = computed(() => {
+    const rangeValue = this.dateRange(); // Agora lê do signal de data
+    return {
+      start_date: rangeValue.start ? formatDate(rangeValue.start) : null,
+      end_date: rangeValue.end ? formatDate(rangeValue.end) : null,
+      status: this.selectedStatus(),
+      collaboratorId: this.selectedCollaboratorId(),
+    };
   });
 
   allStatuses = Object.values(AttendanceStatus);
@@ -98,40 +108,35 @@ export class AttendancesListComponent implements OnInit {
     const today = new Date();
     this.firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     this.lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    this.dateRange.set({ start: this.firstDayOfMonth, end: this.lastDayOfMonth });
 
+    // Inicializa o formulário com os valores do signal de data
     this.range = new FormGroup({
-      start: new FormControl<Date | null>(this.firstDayOfMonth),
-      end: new FormControl<Date | null>(this.lastDayOfMonth),
+      start: new FormControl<Date | null>(this.dateRange().start),
+      end: new FormControl<Date | null>(this.dateRange().end),
     });
-
-    // Conecta o formulário ao signal
-    this.range.valueChanges.pipe(
-      // Aguarda um pequeno tempo após a digitação para não sobrecarregar
-      debounceTime(400),
-      // Garante que ambas as datas não são nulas
-      filter((value): value is { start: Date, end: Date } => !!value.start && !!value.end),
-      // Garante que a data de início seja anterior ou igual à data de fim
-      filter(value => value.start.getTime() <= value.end.getTime()),
-      // Só emite se o valor realmente mudou
-      distinctUntilChanged((prev, curr) => prev.start.getTime() === curr.start.getTime() && prev.end.getTime() === curr.end.getTime())
-    ).subscribe(value => this.dateRange.set(value));
 
     // Effect to automatically reload data when any filter changes
     // Deve ser chamado no construtor para ter acesso ao contexto de injeção.
     effect(() => {
-      const filters = {
-        start_date: this.dateRange().start ? formatDate(this.dateRange().start!) : null,
-        end_date: this.dateRange().end ? formatDate(this.dateRange().end!) : null,
-        status: this.selectedStatus(),
-        collaboratorId: this.selectedCollaboratorId(),
-      };
-      this.loadAttendances(filters);
+      // This effect will now run whenever any filter signal changes,
+      // or when the form group value changes (which we'll trigger).
+      this.loadAttendances(this.filters());
     });
   }
 
   ngOnInit(): void {
     this.loadInitialData();
+
+    // Conecta as mudanças do formulário de data ao nosso signal de data.
+    // Isso garante que o `computed` signal `filters` será reavaliado.
+    this.range.valueChanges.pipe(
+      debounceTime(400),
+      // Garante que ambas as datas não são nulas e que o período é válido
+      filter((value): value is { start: Date, end: Date } =>
+        !!value.start && !!value.end && value.start.getTime() <= value.end.getTime()
+      ),
+      distinctUntilChanged((prev, curr) => prev.start.getTime() === curr.start.getTime() && prev.end.getTime() === curr.end.getTime())
+    ).subscribe(value => this.dateRange.set(value));
   }
 
   private loadInitialData(): void {
