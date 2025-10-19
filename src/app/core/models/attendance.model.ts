@@ -12,11 +12,17 @@ export enum AttendanceStatus {
   FINALIZADA = 'FINALIZADA',
 }
 
+export enum BillingType {
+  FIXED_PRICE = 'FIXED_PRICE',
+  HOURLY = 'HOURLY',
+}
+
 export interface AttendanceCollaborator {
   id: number;
   attendance_id: number;
   user_id: number;
-  financial_value: number;
+  financial_value?: number | null; // Pode ser nulo para projetos HOURLY
+  hourly_rate?: number | null; // Novo campo para valor/hora
   user: User;
 }
 
@@ -38,10 +44,10 @@ export interface BlockerNote {
   resolved_by_user?: User | null; // Quem resolveu
 }
 
-export interface AttendanceCollaboratorCreate {
-  user_id: number;
-  financial_value: number;
-}
+export type AttendanceCollaboratorFixed = { user_id: number; financial_value: number; };
+export type AttendanceCollaboratorHourly = { user_id: number; hourly_rate: number; };
+
+export type AttendanceCollaboratorPayload = AttendanceCollaboratorFixed | AttendanceCollaboratorHourly;
 
 export interface Attendance {
   id: number;
@@ -49,6 +55,7 @@ export interface Attendance {
   service_description: string;
   total_proposal_value?: number;
   status: AttendanceStatus;
+  billing_type: BillingType;
   total_hours?: number;
   hours_worked?: number;
   due_date?: string;
@@ -66,6 +73,7 @@ export interface Attendance {
 export interface AttendanceCreate {
   client_id: number;
   service_description: string;
+  billing_type: BillingType;
   total_hours?: number;
   due_date?: string;
   contract_link?: string;
@@ -81,11 +89,11 @@ export interface AttendanceFilters {
 export type AttendanceUpdate = Partial<Omit<Attendance, 'id' | 'client_id' | 'client' | 'collaborators' | 'created_at' | 'updated_at'>>;
 
 export interface AttendanceStartExecution {
-  collaborators: AttendanceCollaboratorCreate[];
+  collaborators: AttendanceCollaboratorPayload[];
 }
 
 export interface AttendanceAcceptProposal {
-  total_proposal_value: number;
+  total_proposal_value?: number | null;
   due_date: string;
   total_hours?: number;
   contract_link: string;

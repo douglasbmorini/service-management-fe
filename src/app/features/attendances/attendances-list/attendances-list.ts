@@ -1,7 +1,7 @@
-import {Component, computed, effect, inject, OnInit, signal} from '@angular/core';
+import {Component, effect, inject, OnInit, signal} from '@angular/core';
 import {Attendance, AttendanceStatus} from '../../../core/models/attendance.model';
 import {AttendanceService} from '../../../core/services/attendance.service';
-import {MatDialog} from '@angular/material/dialog';
+import {MatDialog} from "@angular/material/dialog";
 import {TimelineComponent} from '../../../shared/components/timeline/timeline.component';
 import {UserService} from '../../../core/services/user.service';
 import {User} from '../../../core/models/user.model';
@@ -15,10 +15,11 @@ import {MatSelectModule} from '@angular/material/select';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatIconModule} from '@angular/material/icon';
 import {MatCardModule} from "@angular/material/card";
-import {TitleCasePipe} from '@angular/common';
-import {map} from "rxjs";
+import {TitleCasePipe} from "@angular/common";
+import {debounceTime, distinctUntilChanged, filter, map} from "rxjs";
 import {MatDatepickerModule} from "@angular/material/datepicker";
 import {MatInputModule} from "@angular/material/input";
+import {MatTooltip} from '@angular/material/tooltip';
 
 // Helper function to format date to 'YYYY-MM-DD'
 const formatDate = (date: Date): string => {
@@ -53,7 +54,8 @@ interface AttendancesState {
     MatCardModule,
     MatDatepickerModule,
     MatInputModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    MatTooltip
   ],
   templateUrl: './attendances-list.html',
   styleUrls: ['./attendances-list.scss']
@@ -65,9 +67,8 @@ export class AttendancesListComponent implements OnInit {
   protected authService = inject(AuthService);
 
   // Define start and end dates for the current month
-  private readonly today = new Date();
-  private readonly firstDayOfMonth = new Date(this.today.getFullYear(), this.today.getMonth(), 1);
-  private readonly lastDayOfMonth = new Date(this.today.getFullYear(), this.today.getMonth() + 1, 0);
+  private readonly firstDayOfMonth: Date;
+  private readonly lastDayOfMonth: Date;
 
   // Estado reativo com Signal
   state = signal<AttendancesState>({
@@ -79,32 +80,58 @@ export class AttendancesListComponent implements OnInit {
   });
 
   // FormGroup for date range picker
-  range = new FormGroup({
-    start: new FormControl<Date | null>(this.firstDayOfMonth),
-    end: new FormControl<Date | null>(this.lastDayOfMonth),
-  });
+  range: FormGroup;
 
   // Signals for individual filters
   selectedStatus = signal<string | null>(null);
   selectedCollaboratorId = signal<number | null>(null);
 
-  // Computed signal that combines all filters into one object
-  private filters = computed(() => ({
-    start_date: this.range.value.start ? formatDate(this.range.value.start) : null,
-    end_date: this.range.value.end ? formatDate(this.range.value.end) : null,
-    status: this.selectedStatus(),
-    collaboratorId: this.selectedCollaboratorId(),
-  }));
+  // Signal para o range de datas, que será a fonte da verdade
+  private dateRange = signal<{ start: Date | null, end: Date | null }>({
+    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+  });
 
   allStatuses = Object.values(AttendanceStatus);
 
-  ngOnInit(): void {
-    this.loadInitialData();
+  constructor() {
+    const today = new Date();
+    this.firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    this.lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    this.dateRange.set({ start: this.firstDayOfMonth, end: this.lastDayOfMonth });
+
+    this.range = new FormGroup({
+      start: new FormControl<Date | null>(this.firstDayOfMonth),
+      end: new FormControl<Date | null>(this.lastDayOfMonth),
+    });
+
+    // Conecta o formulário ao signal
+    this.range.valueChanges.pipe(
+      // Aguarda um pequeno tempo após a digitação para não sobrecarregar
+      debounceTime(400),
+      // Garante que ambas as datas não são nulas
+      filter((value): value is { start: Date, end: Date } => !!value.start && !!value.end),
+      // Garante que a data de início seja anterior ou igual à data de fim
+      filter(value => value.start.getTime() <= value.end.getTime()),
+      // Só emite se o valor realmente mudou
+      distinctUntilChanged((prev, curr) => prev.start.getTime() === curr.start.getTime() && prev.end.getTime() === curr.end.getTime())
+    ).subscribe(value => this.dateRange.set(value));
 
     // Effect to automatically reload data when any filter changes
+    // Deve ser chamado no construtor para ter acesso ao contexto de injeção.
     effect(() => {
-      this.loadAttendances(this.filters());
+      const filters = {
+        start_date: this.dateRange().start ? formatDate(this.dateRange().start!) : null,
+        end_date: this.dateRange().end ? formatDate(this.dateRange().end!) : null,
+        status: this.selectedStatus(),
+        collaboratorId: this.selectedCollaboratorId(),
+      };
+      this.loadAttendances(filters);
     });
+  }
+
+  ngOnInit(): void {
+    this.loadInitialData();
   }
 
   private loadInitialData(): void {

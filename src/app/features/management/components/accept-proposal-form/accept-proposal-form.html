@@ -14,16 +14,18 @@
   <form [formGroup]="acceptForm" id="accept-proposal-form" (ngSubmit)="onSubmit()">
     <p>Informe os detalhes financeiros e o prazo para o atendimento <strong>{{ data.attendance.service_description }}</strong>.</p>
 
-    <mat-form-field>
-      <mat-label>Valor Total da Proposta (R$)</mat-label>
-      <input matInput formControlName="total_proposal_value" type="number" required min="0.01">
-      @if (acceptForm.get('total_proposal_value')?.hasError('required')) {
-        <mat-error>O valor total é obrigatório.</mat-error>
-      }
-      @if (acceptForm.get('total_proposal_value')?.hasError('min')) {
-        <mat-error>O valor deve ser maior que zero.</mat-error>
-      }
-    </mat-form-field>
+    @if (billingType === 'FIXED_PRICE') {
+      <mat-form-field>
+        <mat-label>Valor Total da Proposta (R$)</mat-label>
+        <input matInput formControlName="total_proposal_value" type="number" required min="0.01">
+        @if (acceptForm.get('total_proposal_value')?.hasError('required')) {
+          <mat-error>O valor total é obrigatório.</mat-error>
+        }
+        @if (acceptForm.get('total_proposal_value')?.hasError('min')) {
+          <mat-error>O valor deve ser maior que zero.</mat-error>
+        }
+      </mat-form-field>
+    }
 
     <mat-form-field>
       <mat-label>Data de Vencimento do Pagamento</mat-label>

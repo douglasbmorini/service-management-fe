@@ -21,7 +21,7 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
 import {CommonModule} from '@angular/common';
-import {Attendance, AttendanceAcceptProposal} from '../../../../core/models/attendance.model';
+import {Attendance, AttendanceAcceptProposal, BillingType} from '../../../../core/models/attendance.model';
 import {AttendanceService} from '../../../../core/services/attendance.service';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatIconModule} from '@angular/material/icon';
@@ -71,6 +71,7 @@ export class AcceptProposalForm implements OnInit {
   acceptForm!: FormGroup;
   isSaving = false;
   hasFinancialData: boolean;
+  billingType: BillingType;
 
   constructor(
     public dialogRef: MatDialogRef<AcceptProposalForm>,
@@ -78,14 +79,19 @@ export class AcceptProposalForm implements OnInit {
   ) {
     const client = this.data.attendance.client;
     this.hasFinancialData = !!(client.finance_contact_name && client.finance_contact_email && client.finance_contact_phone);
+    this.billingType = this.data.attendance.billing_type;
   }
 
   ngOnInit(): void {
+    const attendance = this.data.attendance;
+    const isFixedPrice = this.billingType === BillingType.FIXED_PRICE;
+
     this.acceptForm = this.fb.group({
-      total_proposal_value: [null, [Validators.required, Validators.min(0.01)]],
-      due_date: [null, [Validators.required, futureDateValidator()]],
-      total_hours: [this.data.attendance.total_hours || null, [Validators.min(1)]],
-      contract_link: [this.data.attendance.contract_link || '', [Validators.required, Validators.pattern(this.urlPattern)]],
+      // Garante que o valor existente seja carregado no formulário
+      total_proposal_value: [attendance.total_proposal_value || null, isFixedPrice ? [Validators.required, Validators.min(0.01)] : []],
+      due_date: [attendance.due_date ? new Date(attendance.due_date) : null, [Validators.required, futureDateValidator()]],
+      total_hours: [attendance.total_hours || null, [Validators.min(1)]],
+      contract_link: [attendance.contract_link || '', [Validators.required, Validators.pattern(this.urlPattern)]],
     });
 
     if (!this.hasFinancialData) {
@@ -101,14 +107,18 @@ export class AcceptProposalForm implements OnInit {
     if (this.acceptForm.invalid || this.isSaving) return;
     this.isSaving = true;
 
-    const formValue: AttendanceAcceptProposal = this.acceptForm.getRawValue();
+    const formValue = this.acceptForm.getRawValue();
+    const payload: AttendanceAcceptProposal = {
+      due_date: new Date(formValue.due_date).toISOString(),
+      total_hours: formValue.total_hours || null,
+      contract_link: formValue.contract_link,
+      // Define o valor da proposta com base no tipo de faturamento
+      total_proposal_value: this.billingType === BillingType.FIXED_PRICE
+        ? formValue.total_proposal_value
+        : null,
+    };
 
-    // Converte a data para o formato ISO 8601 esperado pela API
-    if (formValue.due_date) {
-      formValue.due_date = new Date(formValue.due_date).toISOString(); // YYYY-MM-DDTHH:mm:ss.sssZ
-    }
-
-    this.attendanceService.acceptProposal(this.data.attendance.id, formValue).pipe(
+    this.attendanceService.acceptProposal(this.data.attendance.id, payload).pipe(
       finalize(() => this.isSaving = false)
     ).subscribe({
       next: () => {

@@ -22,10 +22,10 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
 import {MatSelectModule} from '@angular/material/select';
-import {AsyncPipe, CommonModule, CurrencyPipe} from '@angular/common';
-import {Attendance, AttendanceStartExecution} from '../../../../core/models/attendance.model';
-import {AttendanceService} from '../../../../core/services/attendance.service';
-import {User} from '../../../../core/models/user.model';
+import {AsyncPipe, CommonModule, CurrencyPipe} from "@angular/common";
+import {Attendance, AttendanceStartExecution, BillingType} from '../../../../core/models/attendance.model';
+import {AttendanceService} from "../../../../core/services/attendance.service";
+import {User} from "../../../../core/models/user.model";
 import {UserService} from '../../../../core/services/user.service';
 import {MatIconModule} from '@angular/material/icon';
 
@@ -50,6 +50,7 @@ import {MatIconModule} from '@angular/material/icon';
   styleUrl: './start-execution-form.scss'
 })
 export class StartExecutionForm implements OnInit {
+  // Re-added the inject for AttendanceService
   private fb = inject(FormBuilder);
   private attendanceService = inject(AttendanceService);
   private userService = inject(UserService);
@@ -58,6 +59,7 @@ export class StartExecutionForm implements OnInit {
   startExecutionForm!: FormGroup;
   isSaving = false;
   availableCollaborators$: Observable<User[]>;
+  billingType: BillingType;
 
   constructor(
     public dialogRef: MatDialogRef<StartExecutionForm>,
@@ -69,6 +71,7 @@ export class StartExecutionForm implements OnInit {
       map(users => users.filter(user => user.role === 'colaborador')),
       shareReplay(1) // Cache the result and share it among subscribers
     );
+    this.billingType = this.data.attendance.billing_type; // Correto
   }
 
   ngOnInit(): void {
@@ -76,8 +79,10 @@ export class StartExecutionForm implements OnInit {
       collaborators: this.fb.array([], [Validators.required, Validators.minLength(1)])
     });
 
-    // Valida a soma dos valores dos colaboradores
-    this.collaborators.setValidators(this.financialValueValidator(this.data.attendance.total_proposal_value || 0));
+    // Aplica o validador financeiro apenas para projetos de preço fixo (Correto)
+    if (this.billingType === 'FIXED_PRICE') {
+      this.collaborators.setValidators(this.financialValueValidator(this.data.attendance.total_proposal_value || 0));
+    }
   }
 
   get collaborators(): FormArray {
@@ -85,10 +90,17 @@ export class StartExecutionForm implements OnInit {
   }
 
   addCollaborator(): void {
-    this.collaborators.push(this.fb.group({
+    const collaboratorGroup = this.fb.group({ // Tipagem inferida aqui
       user_id: ['', Validators.required],
-      financial_value: [null, [Validators.required, Validators.min(0.01)]]
-    }));
+      financial_value: [null as number | null], // Inicializa como nulo
+      hourly_rate: [null as number | null]      // Inicializa como nulo
+    });
+    if (this.billingType === BillingType.FIXED_PRICE) {
+      collaboratorGroup.get('financial_value')?.setValidators([Validators.required, Validators.min(0.01)]);
+    } else { // HOURLY
+      collaboratorGroup.get('hourly_rate')?.setValidators([Validators.required, Validators.min(0.01)]);
+    }
+    this.collaborators.push(collaboratorGroup);
   }
 
   removeCollaborator(index: number): void {
@@ -141,8 +153,18 @@ export class StartExecutionForm implements OnInit {
 
     this.isSaving = true;
 
+    // Limpa o payload para enviar apenas os campos relevantes para o tipo de faturamento
+    const collaboratorsPayload = this.startExecutionForm.getRawValue().collaborators.map((collab: any) => {
+      if (this.billingType === BillingType.FIXED_PRICE) {
+        delete collab.hourly_rate;
+      } else { // HOURLY
+        delete collab.financial_value;
+      }
+      return collab;
+    });
+
     const payload: AttendanceStartExecution = {
-      collaborators: this.startExecutionForm.getRawValue().collaborators
+      collaborators: collaboratorsPayload
     };
 
     this.attendanceService.startExecution(this.data.attendance.id, payload).pipe(
@@ -152,7 +174,7 @@ export class StartExecutionForm implements OnInit {
         this.snackBar.open('Execução do atendimento iniciada com sucesso!', 'Fechar', { duration: 3000 });
         this.dialogRef.close(true);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error(err);
         const message = err.error?.detail || 'Erro ao iniciar execução. Verifique os dados e tente novamente.';
         this.snackBar.open(message, 'Fechar', { duration: 4000, panelClass: 'error-snackbar' });

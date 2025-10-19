@@ -7,12 +7,12 @@ import {
   MatDialogRef,
   MatDialogTitle
 } from '@angular/material/dialog';
-import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import {CommonModule} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
 import {MatButtonModule} from '@angular/material/button';
 import {AttendanceForm} from '../../management/components/attendance-form/attendance-form';
-import {Attendance} from '../../../core/models/attendance.model';
+import {Attendance, AttendanceCollaborator} from '../../../core/models/attendance.model';
 import {TimelineComponent} from '../../../shared/components/timeline/timeline.component';
 import {AttendanceService} from '../../../core/services/attendance.service';
 import {AuthService} from '../../../core/services/auth.service';
@@ -104,5 +104,32 @@ export class AttendanceDetail implements OnInit {
         this.loadAttendanceDetails(attendance.id);
       }
     });
+  }
+
+  /**
+   * Calculates and returns the financial value for a collaborator based on the attendance billing type.
+   * - For FIXED_PRICE, it returns the pre-defined financial value.
+   * - For HOURLY, it calculates the value based on hours worked by that specific collaborator.
+   * @param collaborator The collaborator for whom to calculate the value.
+   * @returns The calculated financial value, or 0 if not applicable.
+   */
+  getCollaboratorValue(collaborator: AttendanceCollaborator): number {
+    const attendance = this.state().attendance;
+    if (!attendance) return 0;
+
+    if (attendance.billing_type === 'FIXED_PRICE') {
+      return parseFloat(String(collaborator.financial_value || 0));
+    }
+
+    if (attendance.billing_type === 'HOURLY') {
+      const collaboratorHours = attendance.progress_notes
+        .filter(note => note.user.id === collaborator.user_id && note.hours_spent)
+        .reduce((sum, note) => sum + parseFloat(String(note.hours_spent)), 0);
+
+      const hourlyRate = parseFloat(String(collaborator.hourly_rate || 0));
+      return collaboratorHours * hourlyRate;
+    }
+
+    return 0;
   }
 }

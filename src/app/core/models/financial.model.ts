@@ -19,21 +19,26 @@ export interface UserDiscount {
 export type Discount = ServiceDiscount | UserDiscount;
 
 export interface DiscountCreate {
+  attendance_id?: number;
   description: string;
   value: number;
   discount_type: 'PERCENTAGE' | 'FIXED';
+  applied_date: string;
 }
 
 export interface UserDiscountCreate {
   description: string;
   amount: number;
+  applied_date: string;
 }
 
 export interface CollaboratorFinancialsEntry {
   attendance_id: number;
+  billing_type: 'FIXED_PRICE' | 'HOURLY';
   service_description: string;
   status: string;
   financial_value: string | number;
+  hourly_rate?: number | null; // Adicionado para projetos HOURLY
   service_discounts?: ServiceDiscount[];
 }
 

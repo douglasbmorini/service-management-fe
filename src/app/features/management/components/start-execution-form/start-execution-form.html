@@ -4,14 +4,16 @@
     <p>
       Atribua um ou mais colaboradores para o atendimento <strong>{{ data.attendance.service_description }}</strong>.
     </p>
-    <div class="proposal-value">
-      <span>Valor Total da Proposta:</span>
-      <strong>{{ data.attendance.total_proposal_value | currency }}</strong>
-    </div>
+    @if (billingType === 'FIXED_PRICE') {
+      <div class="proposal-value">
+        <span>Valor Total da Proposta:</span>
+        <strong>{{ data.attendance.total_proposal_value | currency }}</strong>
+      </div>
+    }
 
     <div class="collaborators-section">
       <div class="section-header">
-        <h3 class="form-subtitle">Colaboradores (Valor Fechado)</h3>
+        <h3 class="form-subtitle">Colaboradores ({{ billingType === 'FIXED_PRICE' ? 'Valor Fechado' : 'Valor por Hora' }})</h3>
         <button mat-flat-button color="accent" type="button" (click)="addCollaborator()">
           <mat-icon>add</mat-icon> Adicionar Colaborador
         </button>
@@ -34,16 +36,26 @@
               }
             </mat-form-field>
 
-            <mat-form-field>
-              <mat-label>Valor Financeiro</mat-label>
-              <input matInput formControlName="financial_value" type="number" required min="0.01">
-              @if (collabGroup.get('financial_value')?.hasError('required') && collabGroup.get('financial_value')?.touched) {
-                <mat-error>Valor é obrigatório.</mat-error>
-              }
-              @if (collabGroup.get('financial_value')?.hasError('min') && collabGroup.get('financial_value')?.touched) {
-                <mat-error>Valor deve ser maior que zero.</mat-error>
-              }
-            </mat-form-field>
+            @if (billingType === 'FIXED_PRICE') {
+              <mat-form-field>
+                <mat-label>Valor Financeiro</mat-label>
+                <input matInput formControlName="financial_value" type="number" required min="0.01">
+                @if (collabGroup.get('financial_value')?.hasError('required') && collabGroup.get('financial_value')?.touched) {
+                  <mat-error>Valor é obrigatório.</mat-error>
+                }
+                @if (collabGroup.get('financial_value')?.hasError('min') && collabGroup.get('financial_value')?.touched) {
+                  <mat-error>Valor deve ser maior que zero.</mat-error>
+                }
+              </mat-form-field>
+            } @else {
+              <mat-form-field>
+                <mat-label>Valor/Hora (R$)</mat-label>
+                <input matInput formControlName="hourly_rate" type="number" required min="0.01">
+                @if (collabGroup.get('hourly_rate')?.hasError('required') && collabGroup.get('hourly_rate')?.touched) {
+                  <mat-error>Valor/hora é obrigatório.</mat-error>
+                }
+              </mat-form-field>
+            }
 
             <button mat-icon-button color="warn" type="button" (click)="removeCollaborator($index)" title="Remover Colaborador">
               <mat-icon>delete</mat-icon>
@@ -54,8 +66,10 @@
           <p class="value-muted">Nenhum colaborador adicionado.</p>
         }
       </div>
-      @if (collaborators.hasError('sumMismatch') && collaborators.dirty) {
-        <mat-error class="global-error">A soma dos valores ({{ collaborators.getError('sumMismatch').current | currency }}) deve ser igual ao valor total da proposta ({{ data.attendance.total_proposal_value | currency }}).</mat-error>
+      @if (billingType === 'FIXED_PRICE') {
+        @if (collaborators.hasError('sumMismatch') && collaborators.dirty) {
+          <mat-error class="global-error">A soma dos valores ({{ collaborators.getError('sumMismatch').current | currency }}) deve ser igual ao valor total da proposta ({{ data.attendance.total_proposal_value | currency }}).</mat-error>
+        }
       }
       @if (collaborators.hasError('minlength') && collaborators.touched) {
         <mat-error class="global-error">É necessário adicionar pelo menos um colaborador.</mat-error>

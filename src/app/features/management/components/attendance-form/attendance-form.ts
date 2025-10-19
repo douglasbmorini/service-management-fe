@@ -17,13 +17,13 @@ import {
   MatDialogRef,
   MatDialogTitle
 } from '@angular/material/dialog';
-import {finalize, map, Observable, of} from 'rxjs';
+import {finalize, map, Observable, of, startWith} from 'rxjs';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
 import {MatSelectModule} from '@angular/material/select';
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Attendance, AttendanceStatus} from '../../../../core/models/attendance.model';
+import {Attendance, AttendanceStatus, BillingType} from '../../../../core/models/attendance.model';
 import {Client} from '../../../../core/models/client.model';
 import {AttendanceService} from '../../../../core/services/attendance.service';
 import {ClientService} from '../../../../core/services/client.service';
@@ -116,18 +116,18 @@ export class AttendanceForm implements OnInit {
     // Estrutura base do formulário para criação e edição
     this.attendanceForm = this.fb.group({
       client_id: [this.data?.attendance?.client_id || '', Validators.required],
+      billing_type: [this.data?.attendance?.billing_type || BillingType.FIXED_PRICE, Validators.required],
       service_description: [this.data?.attendance?.service_description || '', Validators.required],
       contract_link: [this.data?.attendance?.contract_link || '', [Validators.pattern(this.urlPattern)]],
     });
 
-    // Adiciona o campo total_hours apenas no modo de criação
-    if (!this.isEditMode) {
-      this.attendanceForm.addControl('total_hours', this.fb.control(null));
-    }
+    // Adiciona o controle de horas e a lógica de validação condicional
+    this.setupTotalHoursControl();
 
     if (this.isEditMode && this.data.attendance) {
       const attendance = this.data.attendance;
       this.attendanceForm.get('client_id')?.disable();
+      this.attendanceForm.get('billing_type')?.disable();
 
       // O link do contrato só pode ser editado até a proposta ser enviada
       if (attendance.status !== AttendanceStatus.PROPOSTA_CRIADA && attendance.status !== AttendanceStatus.PROPOSTA_ENVIADA) {
@@ -167,12 +167,40 @@ export class AttendanceForm implements OnInit {
     }
   }
 
+  private setupTotalHoursControl(): void {
+    // Adiciona o controle ao formulário, desabilitado se estiver em modo de edição.
+    this.attendanceForm.addControl(
+      'total_hours',
+      this.fb.control({
+        value: this.isEditMode ? this.data.attendance?.total_hours : null,
+        disabled: this.isEditMode
+      })
+    );
+
+    // Lógica para tornar 'total_hours' obrigatório se o tipo for HOURLY (apenas na criação)
+    if (!this.isEditMode) {
+      this.attendanceForm.get('billing_type')?.valueChanges.pipe(
+        startWith(this.attendanceForm.get('billing_type')?.value)
+      ).subscribe(type => {
+        const totalHoursControl = this.attendanceForm.get('total_hours');
+        if (type === BillingType.HOURLY) {
+          totalHoursControl?.setValidators([Validators.required, Validators.min(1)]);
+        } else {
+          totalHoursControl?.clearValidators();
+        }
+        totalHoursControl?.updateValueAndValidity();
+      });
+    }
+  }
+
   onSubmit(): void {
     if (this.attendanceForm.invalid || this.isSaving) return;
 
     this.isSaving = true;
 
+    // Usamos getRawValue() para incluir campos desabilitados como client_id e billing_type no modo de edição.
     const formValue = this.attendanceForm.getRawValue();
+
     const request$ = this.isEditMode
       ? this.attendanceService.updateAttendance(this.data.attendance!.id, formValue)
       : this.attendanceService.createAttendance(formValue);

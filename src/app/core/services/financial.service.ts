@@ -34,11 +34,11 @@ export class FinancialService {
     return this.http.get<CollaboratorFinancials>(`${API_URL}/collaborator/${userId}`, { params });
   }
 
-  addDiscount(attendanceId: number, data: DiscountCreate[]): Observable<any> {
-    return this.http.post(`${API_URL}/service-discounts/${attendanceId}`, data);
+  addDiscount(attendanceId: number, discounts: DiscountCreate[]): Observable<any> {
+    return this.http.post(`${API_URL}/service-discounts/${attendanceId}`, discounts);
   }
 
-  addUserDiscount(userId: number, data: UserDiscountCreate[]): Observable<any> {
-    return this.http.post(`${API_URL}/user-discounts/${userId}`, data);
+  addUserDiscount(userId: number, discount: UserDiscountCreate): Observable<any> {
+    return this.http.post(`${API_URL}/user-discounts/${userId}`, discount);
   }
 }

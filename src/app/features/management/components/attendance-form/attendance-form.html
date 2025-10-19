@@ -20,11 +20,22 @@
     </mat-form-field>
 
     <mat-form-field>
+      <mat-label>Tipo de Faturamento</mat-label>
+      <mat-select formControlName="billing_type" required>
+        <mat-option value="FIXED_PRICE">Preço Fixo</mat-option>
+        <mat-option value="HOURLY">Por Hora</mat-option>
+      </mat-select>
+      @if (isEditMode) {
+        <mat-hint>O tipo de faturamento não pode ser alterado após a criação.</mat-hint>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
       <mat-label>Descrição do Serviço</mat-label>
       <textarea matInput formControlName="service_description" required cdkTextareaAutosize></textarea>
     </mat-form-field>
 
-    @if (!isEditMode) {
+    @if (attendanceForm.get('billing_type')?.value === 'HOURLY' || attendanceForm.contains('total_hours')) {
       <mat-form-field>
         <mat-label>Total de Horas (Opcional)</mat-label>
         <input matInput formControlName="total_hours" type="number">

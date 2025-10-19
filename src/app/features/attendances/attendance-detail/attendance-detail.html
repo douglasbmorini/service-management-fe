@@ -50,8 +50,12 @@
               <mat-list role="list">
                 <mat-list-item role="listitem">
                   <mat-icon matListItemIcon>monetization_on</mat-icon>
-                  <div matListItemTitle>Valor da Proposta</div>
-                  <div matListItemLine>{{ att.total_proposal_value | currency }}</div>
+                  <div matListItemTitle>
+                    {{ att.billing_type === 'FIXED_PRICE' ? 'Valor da Proposta' : 'Faturamento por Hora' }}
+                  </div>
+                  <div matListItemLine [class.value-muted]="att.billing_type !== 'FIXED_PRICE'">
+                    {{ att.billing_type === 'FIXED_PRICE' ? (att.total_proposal_value | currency) : 'O valor final será calculado com base nas horas trabalhadas.' }}
+                  </div>
                 </mat-list-item>
                 <mat-list-item role="listitem">
                   <mat-icon matListItemIcon>event</mat-icon>
@@ -83,7 +87,12 @@
                       <mat-list-item role="listitem">
                         <mat-icon matListItemIcon>engineering</mat-icon>
                         <div matListItemTitle>{{ collab.user.full_name }}</div>
-                        <div matListItemLine>{{ collab.financial_value | currency }}</div>
+                        <div matListItemLine>
+                          <span>{{ getCollaboratorValue(collab) | currency }}</span>
+                          @if (att.billing_type === 'HOURLY') {
+                            <span class="sub-line"> ({{ collab.hourly_rate | currency }}/hora)</span>
+                          }
+                        </div>
                       </mat-list-item>
                     }
                   } @else {
