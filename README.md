@@ -1,59 +1,80 @@
-# ServiceManagementFe
+# Gestão Mais - Service Management (Frontend)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.4.
+Este é o repositório do frontend para o sistema de gerenciamento de serviços da Gestão Mais Consultoria. A aplicação é construída com Angular e permite o controle completo de atendimentos, clientes, colaboradores e finanças.
 
-## Development server
+## ✨ Features
 
-To start a local development server, run:
+*   **Dashboard de Atendimentos**: Visualização rápida do status de todos os serviços em andamento, com modos de visualização em cards ou linha do tempo.
+*   **Painel Gerencial**:
+    *   CRUD completo de Atendimentos, Clientes e Usuários.
+    *   Fluxo de status de atendimentos (Proposta -> Execução -> Faturado -> Finalizado).
+    *   Suporte a faturamento por **Preço Fixo** e **Por Hora**.
+*   **Painel Financeiro**:
+    *   Visão geral da saúde financeira da empresa (contas a receber, pagamentos vencidos, etc.).
+    *   Visão detalhada por colaborador, com cálculo de valores brutos, líquidos e taxas.
+    *   Filtros reativos por período e status.
+*   **Autenticação e Autorização**: Sistema de login com JWT e controle de acesso baseado em perfis (Admin, Colaborador).
+*   **Perfil de Usuário**: Permite que o usuário atualize suas próprias informações e senha.
+*   **Tema Dinâmico**: Suporte a temas claro e escuro, com persistência da preferência do usuário.
 
-```bash
-ng serve
-```
+## 🛠️ Tecnologias Utilizadas
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+*   **Framework**: Angular v20+ (Standalone Components)
+*   **Componentes UI**: Angular Material
+*   **Gerenciamento de Estado**: Angular Signals
+*   **Estilo**: SCSS
+*   **Containerização**: Docker e Docker Compose
 
-## Code scaffolding
+## 🚀 Como Executar o Projeto
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Existem duas maneiras de executar o projeto: localmente com o Angular CLI ou via Docker (recomendado para simular o ambiente de produção).
 
-```bash
-ng generate component component-name
-```
+### Requisitos
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+*   Node.js (versão 20 ou superior)
+*   Angular CLI (v20 ou superior)
+*   Docker e Docker Compose (para o método com container)
 
-```bash
-ng generate --help
-```
+### 1. Executando com Docker (Recomendado)
 
-## Building
+Este método garante um ambiente consistente e isolado.
 
-To build the project run:
+1.  **Clone o repositório**:
+    ```sh
+    git clone <url-do-repositorio>
+    cd service-management-fe
+    ```
 
-```bash
-ng build
-```
+2.  **Inicie os containers**:
+    O arquivo `docker-compose.yml` está configurado para o ambiente de desenvolvimento, incluindo hot-reload.
+    ```sh
+    docker-compose up --build
+    ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+3.  **Acesse a aplicação**:
+    Abra seu navegador e acesse `http://localhost:4200/`.
 
-## Running unit tests
+### 2. Executando Localmente
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+1.  **Clone o repositório e instale as dependências**:
+    ```sh
+    git clone <url-do-repositorio>
+    cd service-management-fe
+    npm install
+    ```
 
-```bash
-ng test
-```
+2.  **Inicie o servidor de desenvolvimento**:
+    ```sh
+    npm start
+    ```
 
-## Running end-to-end tests
+3.  **Acesse a aplicação**:
+    Abra seu navegador e acesse `http://localhost:4200/`. A aplicação irá recarregar automaticamente ao modificar os arquivos.
 
-For end-to-end (e2e) testing, run:
+## 🏗️ Scripts Disponíveis
 
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+*   `npm start`: Inicia o servidor de desenvolvimento (exposto na rede local).
+*   `npm run build`: Compila o projeto para desenvolvimento.
+*   `npm run build:prod`: Compila o projeto para produção, com todas as otimizações.
+*   `npm test`: Executa os testes unitários via Karma.
+*   `npm run watch`: Compila o projeto em modo de observação para desenvolvimento.
