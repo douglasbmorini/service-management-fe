@@ -48,12 +48,7 @@
                 }
               ],
               "outputHashing": "all",
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.development.ts",
-                  "with": "src/environments/environment.ts"
-                }
-              ]
+              "sourceMap": false
             },
             "development": {
               "optimization": false,
