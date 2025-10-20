@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8000/api/v1' // <-- Use localhost para desenvolvimento
+  apiUrl: '/api/v1' // <-- O proxy do Angular CLI irá redirecionar para http://localhost:8000
 };
