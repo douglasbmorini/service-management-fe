@@ -35,10 +35,26 @@
       <textarea matInput formControlName="service_description" required cdkTextareaAutosize></textarea>
     </mat-form-field>
 
-    @if (attendanceForm.get('billing_type')?.value === 'HOURLY' || attendanceForm.contains('total_hours')) {
+    <!-- Lógica para MODO DE CRIAÇÃO -->
+    @if (!isEditMode && attendanceForm.get('billing_type')?.value === 'HOURLY') {
+      <div class="toggle-field">
+        <mat-slide-toggle formControlName="defineHourPackage" color="primary">
+          Definir pacote de horas (Horas Fechadas)
+        </mat-slide-toggle>
+      </div>
+      @if (attendanceForm.get('defineHourPackage')?.value) {
+        <mat-form-field>
+          <mat-label>Total de Horas do Pacote</mat-label>
+          <input matInput formControlName="total_hours" type="number" required>
+        </mat-form-field>
+      }
+    }
+    <!-- Lógica para MODO DE EDIÇÃO -->
+    @if (isEditMode && data.attendance?.billing_type === 'HOURLY' && data.attendance?.total_hours) {
       <mat-form-field>
-        <mat-label>Total de Horas (Opcional)</mat-label>
-        <input matInput formControlName="total_hours" type="number">
+        <mat-label>Total de Horas do Pacote</mat-label>
+        <input matInput formControlName="total_hours" type="number" readonly>
+        <mat-hint>O pacote de horas não pode ser alterado após a criação.</mat-hint>
       </mat-form-field>
     }
 
@@ -67,16 +83,6 @@
       @if (attendance.status === 'EM_EXECUCAO' || attendance.status === 'PENDENTE') {
         <h3 class="form-subtitle">Progresso e Status</h3>
 
-<!--        @if (attendanceForm.contains('hours_worked')) {-->
-<!--          <mat-form-field>-->
-<!--            <mat-label>Horas Trabalhadas</mat-label>-->
-<!--            <input matInput formControlName="hours_worked" type="number">-->
-<!--            <mat-hint>Horas trabalhadas: {{attendance.hours_worked}} | Total de horas: {{attendance.total_hours}}</mat-hint>-->
-<!--          </mat-form-field>-->
-<!--        } @else if (attendance.status === 'EM_EXECUCAO' && !attendance.total_hours) {-->
-<!--          <div class="info-text">O registro de horas não se aplica a este atendimento (serviço por valor fechado).</div>-->
-<!--        }-->
-
         <!-- Notas de Progresso -->
         <div class="notes-section">
           <span class="notes-label">Notas de Progresso</span>
@@ -100,7 +106,7 @@
                   <mat-label>Adicionar nota de progresso</mat-label>
                   <textarea matInput formControlName="note" cdkTextareaAutosize></textarea>
                 </mat-form-field>
-                @if (attendance.total_hours) {
+                @if (attendance.billing_type === 'HOURLY') {
                   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="hours-input">
                     <mat-label>Horas Gastas</mat-label>
                     <input matInput formControlName="hours_spent" type="number" min="0.1" [errorStateMatcher]="immediateErrorMatcher">

@@ -17,7 +17,7 @@ import {
   MatDialogRef,
   MatDialogTitle
 } from '@angular/material/dialog';
-import {finalize, map, Observable, of, startWith} from 'rxjs';
+import {finalize, map, Observable, of} from 'rxjs';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
@@ -33,6 +33,7 @@ import {MatListModule} from "@angular/material/list";
 import {MatDividerModule} from "@angular/material/divider";
 import {MatIconModule} from "@angular/material/icon";
 import {ImmediateErrorStateMatcher} from "../../../../shared/utils/form-utils";
+import {MatSlideToggle} from '@angular/material/slide-toggle';
 
 export function maxHoursValidator(max: number): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -68,7 +69,8 @@ export function maxHoursValidator(max: number): ValidatorFn {
     MatListModule,
     MatDividerModule,
     MatIconModule,
-    DatePipe
+    DatePipe,
+    MatSlideToggle
   ],
   templateUrl: './attendance-form.html',
   styleUrl: './attendance-form.scss',
@@ -117,6 +119,7 @@ export class AttendanceForm implements OnInit {
     this.attendanceForm = this.fb.group({
       client_id: [this.data?.attendance?.client_id || '', Validators.required],
       billing_type: [this.data?.attendance?.billing_type || BillingType.FIXED_PRICE, Validators.required],
+      defineHourPackage: [this.isEditMode && !!this.data.attendance?.total_hours], // Novo controle para o toggle
       service_description: [this.data?.attendance?.service_description || '', Validators.required],
       contract_link: [this.data?.attendance?.contract_link || '', [Validators.pattern(this.urlPattern)]],
     });
@@ -156,13 +159,16 @@ export class AttendanceForm implements OnInit {
         hours_spent: [null] // Validador condicional abaixo
       });
 
-      if (attendance.total_hours) {
-        const remainingHours = (attendance.total_hours || 0) - (attendance.hours_worked || 0);
-        this.progressNoteForm.get('hours_spent')?.setValidators([
-          Validators.required,
-          Validators.min(0.1),
-          maxHoursValidator(remainingHours)
-        ]);
+      // Para QUALQUER atendimento por hora, o lançamento de horas é obrigatório.
+      if (attendance.billing_type === BillingType.HOURLY) {
+        const validators = [Validators.required, Validators.min(0.1)];
+
+        // Se for um pacote de horas, adiciona também o validador de horas máximas.
+        if (attendance.total_hours) {
+          const remainingHours = (attendance.total_hours || 0) - (attendance.hours_worked || 0);
+          validators.push(maxHoursValidator(remainingHours));
+        }
+        this.progressNoteForm.get('hours_spent')?.setValidators(validators);
       }
     }
   }
@@ -178,15 +184,23 @@ export class AttendanceForm implements OnInit {
     );
 
     // Lógica para tornar 'total_hours' obrigatório se o tipo for HOURLY (apenas na criação)
+    // e o toggle de pacote de horas estiver ativo.
     if (!this.isEditMode) {
-      this.attendanceForm.get('billing_type')?.valueChanges.pipe(
-        startWith(this.attendanceForm.get('billing_type')?.value)
-      ).subscribe(type => {
+      const billingTypeControl = this.attendanceForm.get('billing_type');
+      const defineHourPackageControl = this.attendanceForm.get('defineHourPackage');
+      const totalHoursControl = this.attendanceForm.get('total_hours');
+
+      billingTypeControl?.valueChanges.subscribe(() => {
+        defineHourPackageControl?.setValue(false); // Reseta o toggle ao mudar o tipo
+      });
+
+      defineHourPackageControl?.valueChanges.subscribe(isPackageDefined => {
         const totalHoursControl = this.attendanceForm.get('total_hours');
-        if (type === BillingType.HOURLY) {
+        if (isPackageDefined) {
           totalHoursControl?.setValidators([Validators.required, Validators.min(1)]);
         } else {
           totalHoursControl?.clearValidators();
+          totalHoursControl?.reset();
         }
         totalHoursControl?.updateValueAndValidity();
       });

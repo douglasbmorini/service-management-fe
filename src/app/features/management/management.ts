@@ -4,14 +4,14 @@ import {MatTabsModule} from '@angular/material/tabs';
 import {MatTableModule} from '@angular/material/table';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from '../../core/services/auth.service';
 import {UserService} from '../../core/services/user.service';
 import {ClientService} from '../../core/services/client.service';
 import {User} from '../../core/models/user.model';
 import {Client, ClientCreate, ClientUpdate} from '../../core/models/client.model';
-import {Attendance, AttendanceStatus} from '../../core/models/attendance.model';
+import {Attendance} from '../../core/models/attendance.model';
 import {AttendanceService} from '../../core/services/attendance.service';
 import {EMPTY, forkJoin, Observable, of} from 'rxjs';
 import {catchError, filter, switchMap, tap} from 'rxjs/operators';
@@ -21,6 +21,7 @@ import {UserForm} from './components/user-form/user-form';
 import {AttendanceForm} from "./components/attendance-form/attendance-form";
 import {StartExecutionForm} from './components/start-execution-form/start-execution-form';
 import {AcceptProposalForm} from "./components/accept-proposal-form/accept-proposal-form";
+import {MatChip, MatChipSet} from '@angular/material/chips';
 
 interface ManagementState {
   users: User[];
@@ -33,7 +34,7 @@ interface ManagementState {
 @Component({
   selector: 'app-management',
   standalone: true,
-  imports: [CommonModule, MatTabsModule, MatTableModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatTabsModule, MatTableModule, MatButtonModule, MatIconModule, MatChipSet, MatChip],
   templateUrl: './management.html',
   styleUrl: './management.scss'
 })
@@ -56,7 +57,7 @@ export class Management implements OnInit {
   // Colunas para as tabelas
   userDisplayedColumns: string[] = ['full_name', 'email', 'role', 'is_active', 'actions'];
   clientDisplayedColumns: string[] = ['company_name', 'contact_name', 'contact_email', 'status', 'actions'];
-  attendanceDisplayedColumns: string[] = ['service_description', 'client', 'status', 'due_date', 'actions'];
+  attendanceDisplayedColumns: string[] = [];
   selectedTabIndex: WritableSignal<number> = signal(0);
 
   ngOnInit(): void {
@@ -65,6 +66,14 @@ export class Management implements OnInit {
 
   private loadData(): void {
     this.state.update(s => ({ ...s, isLoading: true, error: null }));
+
+    // Define as colunas da tabela de atendimentos dinamicamente
+    this.attendanceDisplayedColumns = ['service_description', 'client', 'status', 'due_date'];
+    if (this.authService.isAdmin()) {
+      // Adiciona a coluna de colaboradores apenas para admins
+      this.attendanceDisplayedColumns.push('collaborators');
+    }
+    this.attendanceDisplayedColumns.push('actions');
 
     const clients$ = this.clientService.getClients().pipe(
       catchError(() => {

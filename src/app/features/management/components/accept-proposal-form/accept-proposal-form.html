@@ -41,15 +41,6 @@
     </mat-form-field>
 
     <mat-form-field>
-      <mat-label>Total de Horas (Pacote de Horas)</mat-label>
-      <input matInput formControlName="total_hours" type="number" min="1">
-      <mat-hint>Opcional. Preencha apenas se o serviço for por pacote de horas.</mat-hint>
-      @if (acceptForm.get('total_hours')?.hasError('min')) {
-        <mat-error>O total de horas deve ser no mínimo 1.</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field>
       <mat-label>Link do Contrato (Assinado)</mat-label>
       <input matInput formControlName="contract_link" required>
       @if (acceptForm.get('contract_link')?.hasError('required')) {

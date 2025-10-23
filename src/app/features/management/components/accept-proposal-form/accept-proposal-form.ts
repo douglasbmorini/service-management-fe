@@ -90,7 +90,6 @@ export class AcceptProposalForm implements OnInit {
       // Garante que o valor existente seja carregado no formulário
       total_proposal_value: [attendance.total_proposal_value || null, isFixedPrice ? [Validators.required, Validators.min(0.01)] : []],
       due_date: [attendance.due_date ? new Date(attendance.due_date) : null, [Validators.required, futureDateValidator()]],
-      total_hours: [attendance.total_hours || null, [Validators.min(1)]],
       contract_link: [attendance.contract_link || '', [Validators.required, Validators.pattern(this.urlPattern)]],
     });
 
@@ -110,7 +109,6 @@ export class AcceptProposalForm implements OnInit {
     const formValue = this.acceptForm.getRawValue();
     const payload: AttendanceAcceptProposal = {
       due_date: new Date(formValue.due_date).toISOString(),
-      total_hours: formValue.total_hours || null,
       contract_link: formValue.contract_link,
       // Define o valor da proposta com base no tipo de faturamento
       total_proposal_value: this.billingType === BillingType.FIXED_PRICE
