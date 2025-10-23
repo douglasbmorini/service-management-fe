@@ -1,11 +1,5 @@
 <div class="financial-container">
   <header class="financial-header">
-    <div class="header-title">
-      <h1>Painel Financeiro</h1>
-      @if (selectedCollaboratorId() && authService.isAdmin()) {
-        <button mat-stroked-button color="accent" (click)="openAddUserDiscountDialog()">Adicionar Taxa Mensal</button>
-      }
-    </div>
     <div class="filters">
       <!-- Date Range Filter -->
       <mat-form-field appearance="outline">
@@ -41,6 +35,11 @@
             }
           </mat-select>
         </mat-form-field>
+      }
+
+      <!-- Botão de Ação que agora fica junto aos filtros -->
+      @if (selectedCollaboratorId() && authService.isAdmin()) {
+        <button mat-stroked-button color="accent" (click)="openAddUserDiscountDialog()">Adicionar Taxa Mensal</button>
       }
     </div>
   </header>
