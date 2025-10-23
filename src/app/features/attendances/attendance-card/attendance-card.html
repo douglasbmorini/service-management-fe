@@ -14,9 +14,14 @@
           <mat-icon>hourglass_empty</mat-icon>
           <span>{{ remainingHours() }}h de {{ attendance.total_hours }}h restantes</span>
         </div>
+      } @else if (attendance.billing_type === 'HOURLY') {
+        <div class="detail-item">
+          <mat-icon>hourglass_bottom</mat-icon>
+          <span>{{ attendance.hours_worked || 0 | number:'1.1-2' }}h trabalhadas</span>
+        </div>
       } @else {
         <div class="detail-item">
-          <mat-icon>assignment</mat-icon>
+          <mat-icon>monetization_on</mat-icon>
           <span>Pacote fechado</span>
         </div>
       }

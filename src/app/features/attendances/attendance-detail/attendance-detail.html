@@ -69,10 +69,16 @@
                   <div matListItemLine>{{ att.client.finance_contact_phone }}</div>
                 </mat-list-item>
                 @if (att.total_hours) {
-                  <mat-list-item role="listitem">
+                  <mat-list-item role="listitem" matTooltip="Este atendimento possui um pacote de horas definido.">
                     <mat-icon matListItemIcon>hourglass_top</mat-icon>
                     <div matListItemTitle>Horas Contratadas</div>
                     <div matListItemLine>{{ att.hours_worked || 0 | number:'1.1-2' }} / {{ att.total_hours | number:'1.1-2' }} horas</div>
+                  </mat-list-item>
+                } @else if (att.billing_type === 'HOURLY') {
+                  <mat-list-item role="listitem" matTooltip="Este atendimento não possui um limite de horas.">
+                    <mat-icon matListItemIcon>hourglass_bottom</mat-icon>
+                    <div matListItemTitle>Horas Trabalhadas</div>
+                    <div matListItemLine>{{ att.hours_worked || 0 | number:'1.1-2' }} horas</div>
                   </mat-list-item>
                 }
               </mat-list>
