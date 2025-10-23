@@ -71,7 +71,8 @@
               "buildTarget": "service-management-fe:build:production"
             },
             "development": {
-              "buildTarget": "service-management-fe:build:development"
+              "buildTarget": "service-management-fe:build:development",
+              "proxyConfig": "src/proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"
