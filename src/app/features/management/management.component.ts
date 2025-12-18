@@ -1,4 +1,4 @@
-import {Component, inject, OnInit, signal, WritableSignal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit, signal, WritableSignal} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatTableModule} from '@angular/material/table';
@@ -11,17 +11,19 @@ import {UserService} from '../../core/services/user.service';
 import {ClientService} from '../../core/services/client.service';
 import {User} from '../../core/models/user.model';
 import {Client, ClientCreate, ClientUpdate} from '../../core/models/client.model';
-import {Attendance} from '../../core/models/attendance.model';
+import {Attendance, AttendanceStatus} from '../../core/models/attendance.model';
 import {AttendanceService} from '../../core/services/attendance.service';
 import {EMPTY, forkJoin, Observable, of} from 'rxjs';
 import {catchError, filter, switchMap, tap} from 'rxjs/operators';
 import {ConfirmationDialogComponent} from './components/confirmation-dialog.component';
-import {ClientForm} from './components/client-form/client-form';
-import {UserForm} from './components/user-form/user-form';
-import {AttendanceForm} from "./components/attendance-form/attendance-form";
-import {StartExecutionForm} from './components/start-execution-form/start-execution-form';
-import {AcceptProposalForm} from "./components/accept-proposal-form/accept-proposal-form";
-import {MatChip, MatChipSet} from '@angular/material/chips';
+import {ClientFormComponent} from './components/client-form/client-form.component';
+import {UserFormComponent} from './components/user-form/user-form.component';
+import {AttendanceFormComponent} from './components/attendance-form/attendance-form.component';
+import {StartExecutionFormComponent} from './components/start-execution-form/start-execution-form.component';
+import {AcceptProposalFormComponent} from './components/accept-proposal-form/accept-proposal-form.component';
+import {MatChip, MatChipSet} from "@angular/material/chips";
+import {environment} from "../../../environments/environment";
+import {DeleteWithJustificationDialogComponent} from "./components/delete-with-justification-dialog.component";
 
 interface ManagementState {
   users: User[];
@@ -36,9 +38,10 @@ interface ManagementState {
   standalone: true,
   imports: [CommonModule, MatTabsModule, MatTableModule, MatButtonModule, MatIconModule, MatChipSet, MatChip],
   templateUrl: './management.html',
-  styleUrl: './management.scss'
+  styleUrl: './management.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Management implements OnInit {
+export class ManagementComponent implements OnInit {
   protected authService = inject(AuthService);
   private userService = inject(UserService);
   private clientService = inject(ClientService);
@@ -59,6 +62,18 @@ export class Management implements OnInit {
   clientDisplayedColumns: string[] = ['company_name', 'contact_name', 'contact_email', 'status', 'actions'];
   attendanceDisplayedColumns: string[] = [];
   selectedTabIndex: WritableSignal<number> = signal(0);
+  isProduction = environment.production;
+
+  private statusClassMap: Record<string, string> = {
+    [AttendanceStatus.PROPOSTA_CRIADA]: 'status-created',
+    [AttendanceStatus.PROPOSTA_ENVIADA]: 'status-proposal',
+    [AttendanceStatus.PROPOSTA_ACEITA]: 'status-accepted',
+    [AttendanceStatus.PROPOSTA_RECUSADA]: 'status-refused',
+    [AttendanceStatus.EM_EXECUCAO]: 'status-executing',
+    [AttendanceStatus.PENDENTE]: 'status-pending',
+    [AttendanceStatus.FATURADA]: 'status-invoiced',
+    [AttendanceStatus.FINALIZADA]: 'status-finished',
+  };
 
   ngOnInit(): void {
     this.loadData();
@@ -108,6 +123,10 @@ export class Management implements OnInit {
     });
   }
 
+  getStatusClass(status: string): string {
+    return this.statusClassMap[status] || 'status-default';
+  }
+
   private handleCrudDialog<T, D, R>(
     dialogComponent: new (...args: any[]) => T,
     dialogData: D,
@@ -140,16 +159,16 @@ export class Management implements OnInit {
   openCreateUserDialog(): void {
     // Explicitamente definimos que o tipo de retorno (R) do dialog será UserCreateByAdmin
     type UserCreateByAdmin = Parameters<typeof this.userService.createUser>[0];
-    this.handleCrudDialog<UserForm, {}, UserCreateByAdmin>(
-      UserForm, {}, data => this.userService.createUser(data), 'usuário'
+    this.handleCrudDialog<UserFormComponent, {}, UserCreateByAdmin>(
+      UserFormComponent, {}, data => this.userService.createUser(data), 'usuário'
     );
   }
 
   openEditUserDialog(user: User): void {
     // Explicitamente definimos que o tipo de retorno (R) do dialog será UserUpdate
     type UserUpdate = Parameters<typeof this.userService.updateUser>[1];
-    this.handleCrudDialog<UserForm, { user: User }, UserUpdate>(
-      UserForm, { user }, data => this.userService.updateUser(user.id, data), 'usuário'
+    this.handleCrudDialog<UserFormComponent, { user: User }, UserUpdate>(
+      UserFormComponent, { user }, data => this.userService.updateUser(user.id, data), 'usuário'
     );
   }
 
@@ -179,15 +198,15 @@ export class Management implements OnInit {
   }
 
   openCreateClientDialog(): void {
-    this.handleCrudDialog<ClientForm, {}, ClientCreate>(
-      ClientForm, {}, data => this.clientService.createClient(data), 'cliente'
+    this.handleCrudDialog<ClientFormComponent, {}, ClientCreate>(
+      ClientFormComponent, {}, data => this.clientService.createClient(data), 'cliente'
     );
   }
 
   openEditClientDialog(client: Client): void {
     // O tipo ClientUpdate é Partial<Client>, que já existe.
-    this.handleCrudDialog<ClientForm, { client: Client }, ClientUpdate>(
-      ClientForm, { client }, data => this.clientService.updateClient(client.id, data), 'cliente'
+    this.handleCrudDialog<ClientFormComponent, { client: Client }, ClientUpdate>(
+      ClientFormComponent, { client }, data => this.clientService.updateClient(client.id, data), 'cliente'
     );
   }
 
@@ -217,7 +236,7 @@ export class Management implements OnInit {
   }
 
   openCreateAttendanceDialog(): void {
-    const dialogRef = this.dialog.open(AttendanceForm, {
+    const dialogRef = this.dialog.open(AttendanceFormComponent, {
       width: '600px',
       data: {}
     });
@@ -246,10 +265,10 @@ export class Management implements OnInit {
     });
   }
 
-  openEditAttendanceDialog(attendance: Attendance): void {
-    const dialogRef = this.dialog.open(AttendanceForm, {
+  openEditAttendanceDialog(attendance: Attendance, focusSection?: 'progress' | 'payment'): void {
+    const dialogRef = this.dialog.open(AttendanceFormComponent, {
       width: '600px',
-      data: { attendance }
+      data: { attendance, focusSection }
     });
 
     dialogRef.afterClosed().subscribe(result => {
@@ -260,7 +279,7 @@ export class Management implements OnInit {
   }
 
   openStartExecutionDialog(attendance: Attendance): void {
-    const dialogRef = this.dialog.open(StartExecutionForm, {
+    const dialogRef = this.dialog.open(StartExecutionFormComponent, {
       width: '600px',
       data: { attendance }
     });
@@ -305,7 +324,7 @@ export class Management implements OnInit {
   }
 
   acceptProposal(attendance: Attendance): void {
-    const dialogRef = this.dialog.open(AcceptProposalForm, {
+    const dialogRef = this.dialog.open(AcceptProposalFormComponent, {
       width: '500px',
       data: {
         attendance
@@ -346,6 +365,31 @@ export class Management implements OnInit {
       ))
     ).subscribe(() => {
       this.snackBar.open('Proposta recusada com sucesso!', 'Fechar', { duration: 3000 });
+      this.loadData();
+    });
+  }
+
+  openDeleteAttendanceDialog(attendance: Attendance): void {
+    const dialogRef = this.dialog.open(DeleteWithJustificationDialogComponent, {
+      width: '500px',
+      data: {
+        title: 'Confirmar Exclusão',
+        message: `Tem certeza que deseja excluir o atendimento <strong>${attendance.service_description}</strong>? <br>Esta ação notificará o cliente e os colaboradores envolvidos.`
+      }
+    });
+
+    dialogRef.afterClosed().pipe(
+      filter(result => !!result), // Se houver resultado (justificativa)
+      switchMap((justification) => this.attendanceService.deleteAttendance(attendance.id, justification).pipe(
+        catchError(err => {
+          console.error(err);
+          const message = err.error?.detail || 'Não foi possível excluir o atendimento.';
+          this.snackBar.open(message, 'Fechar', { duration: 5000, panelClass: 'error-snackbar' });
+          return EMPTY;
+        })
+      ))
+    ).subscribe(() => {
+      this.snackBar.open('Atendimento excluído com sucesso!', 'Fechar', { duration: 3000 });
       this.loadData();
     });
   }

@@ -55,11 +55,14 @@ html {
   --color-error: #dc3545;
 
   /* Cores de Status */
+  --status-created: #6c757d; /* Cinza */
   --status-proposal: #ffc107; /* Amarelo */
+  --status-accepted: #28a745; /* Verde */
+  --status-refused: #343a40; /* Cinza Escuro */
   --status-executing: #17a2b8; /* Azul Ciano */
   --status-pending: #fd7e14; /* Laranja */
   --status-invoiced: #007bff; /* Azul Primário */
-  --status-finished: #28a745; /* Verde */
+  --status-finished: #198754; /* Verde Escuro (Diferente de Accepted) */
   --status-default: #6c757d; /* Cinza */
   --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   --border-radius: 0.5rem;

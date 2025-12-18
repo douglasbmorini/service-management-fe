@@ -11,7 +11,7 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import {CommonModule} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
 import {MatButtonModule} from '@angular/material/button';
-import {AttendanceForm} from '../../management/components/attendance-form/attendance-form';
+import {AttendanceFormComponent} from '../../management/components/attendance-form/attendance-form.component';
 import {Attendance, AttendanceCollaborator} from '../../../core/models/attendance.model';
 import {TimelineComponent} from '../../../shared/components/timeline/timeline.component';
 import {AttendanceService} from '../../../core/services/attendance.service';
@@ -93,7 +93,7 @@ export class AttendanceDetail implements OnInit {
     const attendance = this.state().attendance;
     if (!attendance) return;
 
-    const dialogRef = this.dialog.open(AttendanceForm, {
+    const dialogRef = this.dialog.open(AttendanceFormComponent, {
       width: '600px',
       data: { attendance }
     });

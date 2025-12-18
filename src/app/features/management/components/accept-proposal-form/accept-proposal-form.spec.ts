@@ -1,18 +1,18 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {AcceptProposalForm} from './accept-proposal-form';
+import {AcceptProposalFormComponent} from './accept-proposal-form.component';
 
-describe('AcceptProposalForm', () => {
-  let component: AcceptProposalForm;
-  let fixture: ComponentFixture<AcceptProposalForm>;
+describe('AcceptProposalFormComponent', () => {
+  let component: AcceptProposalFormComponent;
+  let fixture: ComponentFixture<AcceptProposalFormComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AcceptProposalForm]
+      imports: [AcceptProposalFormComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(AcceptProposalForm);
+    fixture = TestBed.createComponent(AcceptProposalFormComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -41,7 +41,7 @@ import {TitleCasePipe} from "@angular/common";
   templateUrl: './user-form.html',
   styleUrl: './user-form.scss',
 })
-export class UserForm implements OnInit {
+export class UserFormComponent implements OnInit {
   // Regex para validar nome completo (pelo menos um nome e um sobrenome)
   private readonly fullNamePattern = '^[a-zA-ZÀ-ú]+(?:\\s[a-zA-ZÀ-ú]+)+$';
   // Regex para validar telefone nos formatos (XX) XXXX-XXXX ou (XX) XXXXX-XXXX
@@ -57,7 +57,7 @@ export class UserForm implements OnInit {
   userRoles: UserRole[] = [];
 
   constructor(
-    public dialogRef: MatDialogRef<UserForm>,
+    public dialogRef: MatDialogRef<UserFormComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { user?: User }
   ) {
     this.isEditMode = !!this.data?.user;

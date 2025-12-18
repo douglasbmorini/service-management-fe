@@ -1,4 +1,4 @@
-import {Component, computed, Input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, Input} from '@angular/core';
 import {MatCardModule} from "@angular/material/card";
 import {CommonModule} from "@angular/common";
 import {MatListModule} from "@angular/material/list";
@@ -17,7 +17,8 @@ import {MatIconModule} from "@angular/material/icon";
   standalone: true,
   imports: [CommonModule, MatCardModule, MatListModule, MatChipsModule, MatExpansionModule, MatIconModule],
   templateUrl: './collaborator-financials.component.html',
-  styleUrls: ['./collaborator-financials.component.scss']
+  styleUrls: ['./collaborator-financials.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CollaboratorFinancialsComponent {
   @Input() financials: CollaboratorFinancials | null = null;
@@ -42,7 +43,11 @@ export class CollaboratorFinancialsComponent {
   // Helper to calculate the net value for an entry after discounts
   getNetValue(entry: CollaboratorFinancialsEntry): number {
     const grossValue = parseFloat(String(entry.financial_value)) || 0;
-    const serviceDiscounts = (entry.service_discounts || []).reduce((sum: number, discount: ServiceDiscount) => sum + (parseFloat(String(discount.amount)) || 0), 0);
+    
+    // Usa o total de descontos pré-calculado se disponível, senão calcula
+    const serviceDiscounts = entry.total_discounts_amount !== undefined 
+      ? entry.total_discounts_amount 
+      : (entry.service_discounts || []).reduce((sum: number, discount: ServiceDiscount) => sum + (parseFloat(String(discount.amount)) || 0), 0);
 
     return grossValue - serviceDiscounts;
   }

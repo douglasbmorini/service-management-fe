@@ -1,4 +1,4 @@
-import {Component, computed, EventEmitter, Input, Output} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, EventEmitter, Input, Output} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {Attendance, AttendanceStatus} from '../../../core/models/attendance.model';
 import {MatCardModule} from "@angular/material/card";
@@ -15,7 +15,8 @@ import {MatIconModule} from "@angular/material/icon";
     MatIconModule
   ],
   templateUrl: './attendance-card.html',
-  styleUrl: './attendance-card.scss'
+  styleUrl: './attendance-card.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AttendanceCard {
   @Input({ required: true }) attendance!: Attendance;
@@ -23,9 +24,10 @@ export class AttendanceCard {
 
   // Mapeamento de status para classes CSS para manter o template limpo
   private statusClassMap: Record<string, string> = {
+    [AttendanceStatus.PROPOSTA_CRIADA]: 'status-created',
     [AttendanceStatus.PROPOSTA_ENVIADA]: 'status-proposal',
-    [AttendanceStatus.PROPOSTA_ACEITA]: 'status-executing',
-    [AttendanceStatus.PROPOSTA_RECUSADA]: 'status-default',
+    [AttendanceStatus.PROPOSTA_ACEITA]: 'status-accepted',
+    [AttendanceStatus.PROPOSTA_RECUSADA]: 'status-refused',
     [AttendanceStatus.EM_EXECUCAO]: 'status-executing',
     [AttendanceStatus.PENDENTE]: 'status-pending',
     [AttendanceStatus.FATURADA]: 'status-invoiced',

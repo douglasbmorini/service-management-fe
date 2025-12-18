@@ -8,7 +8,7 @@ import {
   MatDialogRef,
   MatDialogTitle
 } from '@angular/material/dialog';
-import {finalize} from 'rxjs';
+import {catchError, EMPTY, finalize} from 'rxjs';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
@@ -138,7 +138,13 @@ export class AddDiscountFormComponent implements OnInit {
     }
 
     this.financialService.addDiscount(this.data.attendanceId, payload).pipe(
-      finalize(() => this.isSaving = false)
+      catchError(err => {
+        console.error(err);
+        const message = err.error?.detail || 'Erro ao adicionar desconto. Tente novamente.';
+        this.snackBar.open(message, 'Fechar', { duration: 5000, panelClass: 'error-snackbar' }); // Corrigido: Adicionado 'panelClass'
+        return EMPTY; // Importante: retorna um Observable vazio para não quebrar o fluxo
+      }),
+      finalize(() => this.isSaving = false) // Finalize deve estar dentro do pipe
     ).subscribe({
       next: () => {
         this.snackBar.open('Desconto adicionado com sucesso!', 'Fechar', { duration: 3000 });

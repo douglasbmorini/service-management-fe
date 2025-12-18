@@ -1,5 +1,5 @@
 import {DOCUMENT} from '@angular/common';
-import {Inject, Injectable, Renderer2, RendererFactory2, signal} from '@angular/core';
+import {inject, Injectable, Renderer2, RendererFactory2, signal} from '@angular/core';
 
 const THEME_KEY = 'app-theme';
 
@@ -8,15 +8,14 @@ const THEME_KEY = 'app-theme';
 })
 export class ThemeService {
   private renderer: Renderer2;
+  private document = inject(DOCUMENT);
   private _isDarkMode = signal(false);
 
   // Sinal público para que os componentes possam reagir à mudança de tema
   public isDarkMode = this._isDarkMode.asReadonly();
 
-  constructor(
-    @Inject(DOCUMENT) private document: Document,
-    rendererFactory: RendererFactory2
-  ) {
+  constructor() {
+    const rendererFactory = inject(RendererFactory2);
     this.renderer = rendererFactory.createRenderer(null, null);
     this.loadInitialTheme();
   }

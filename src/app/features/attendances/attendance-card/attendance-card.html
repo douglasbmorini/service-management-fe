@@ -29,7 +29,7 @@
   </mat-card-content>
   <mat-card-actions align="end">
     <mat-chip-listbox>
-      <mat-chip [ngClass]="statusClass()">{{ attendance.status.replace('_', ' ') | titlecase }}</mat-chip>
+      <mat-chip [class]="statusClass()">{{ attendance.status.replace('_', ' ') | titlecase }}</mat-chip>
     </mat-chip-listbox>
   </mat-card-actions>
 </mat-card>

@@ -62,7 +62,7 @@ export function futureDateValidator(): ValidatorFn {
   templateUrl: './accept-proposal-form.html',
   styleUrl: './accept-proposal-form.scss'
 })
-export class AcceptProposalForm implements OnInit {
+export class AcceptProposalFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private attendanceService = inject(AttendanceService);
   private snackBar = inject(MatSnackBar);
@@ -74,7 +74,7 @@ export class AcceptProposalForm implements OnInit {
   billingType: BillingType;
 
   constructor(
-    public dialogRef: MatDialogRef<AcceptProposalForm>,
+    public dialogRef: MatDialogRef<AcceptProposalFormComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { attendance: Attendance }
   ) {
     const client = this.data.attendance.client;
@@ -89,7 +89,7 @@ export class AcceptProposalForm implements OnInit {
     this.acceptForm = this.fb.group({
       // Garante que o valor existente seja carregado no formulário
       total_proposal_value: [attendance.total_proposal_value || null, isFixedPrice ? [Validators.required, Validators.min(0.01)] : []],
-      due_date: [attendance.due_date ? new Date(attendance.due_date) : null, [Validators.required, futureDateValidator()]],
+      due_date: [attendance.due_date ? new Date(attendance.due_date) : null, [Validators.required]],
       contract_link: [attendance.contract_link || '', [Validators.required, Validators.pattern(this.urlPattern)]],
     });
 

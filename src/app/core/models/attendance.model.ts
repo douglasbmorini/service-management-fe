@@ -1,5 +1,6 @@
 import {Client} from './client.model';
 import {User} from './user.model';
+import {ServiceDiscount} from './financial.model';
 
 export enum AttendanceStatus {
   PROPOSTA_CRIADA = 'PROPOSTA_CRIADA',
@@ -54,6 +55,8 @@ export interface Attendance {
   client_id: number;
   service_description: string;
   total_proposal_value?: number;
+  total_amount?: number; // Valor total calculado (fixo ou horas)
+  total_discounts_amount?: number; // Total de descontos
   status: AttendanceStatus;
   billing_type: BillingType;
   total_hours?: number;
@@ -65,6 +68,7 @@ export interface Attendance {
   created_at: string;
   updated_at: string;
   client: Client;
+  service_discounts: ServiceDiscount[];
   collaborators: AttendanceCollaborator[];
   progress_notes: ProgressNote[];
   blocker_notes: BlockerNote[];
@@ -84,6 +88,7 @@ export interface AttendanceFilters {
   end_date?: string | null;
   collaboratorId?: number | null;
   status?: string | null;
+  ids?: number[];
 }
 
 export type AttendanceUpdate = Partial<Omit<Attendance, 'id' | 'client_id' | 'client' | 'collaborators' | 'created_at' | 'updated_at'>>;

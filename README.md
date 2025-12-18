@@ -78,3 +78,23 @@ Este método garante um ambiente consistente e isolado.
 *   `npm run build:prod`: Compila o projeto para produção, com todas as otimizações.
 *   `npm test`: Executa os testes unitários via Karma.
 *   `npm run watch`: Compila o projeto em modo de observação para desenvolvimento.
+
+## 🏛️ Arquitetura e Evolução
+
+O projeto segue uma arquitetura moderna com `Standalone Components`, `Signals` para gerenciamento de estado e uma clara separação de responsabilidades entre as pastas `core`, `features` e `shared`.
+
+### Backend como Fonte da Verdade para Cálculos
+
+Um princípio fundamental adotado é que o **backend deve ser a única fonte da verdade para regras de negócio e cálculos complexos**. O frontend atua como uma camada de apresentação, consumindo e exibindo os dados pré-processados. Isso traz vários benefícios:
+
+*   **Simplicidade no Frontend**: Reduz a complexidade e a quantidade de código no cliente.
+*   **Consistência**: Garante que os cálculos sejam consistentes, independentemente de onde são exibidos.
+*   **Manutenibilidade**: Centraliza a lógica de negócio em um único lugar (o backend), facilitando futuras alterações.
+
+### Integração com Backend Otimizado
+
+O frontend está configurado para consumir endpoints otimizados que entregam dados pré-calculados:
+
+1.  **Fechamentos Financeiros**: Utiliza o campo `total_paid` retornado pela API, eliminando cálculos de iteração no cliente.
+2.  **Valores de Atendimentos**: Consome `financial_value` e `total_amount` pré-calculados para todos os tipos de faturamento (`FIXED_PRICE` e `HOURLY`).
+3.  **Descontos**: Utiliza `total_discounts_amount` fornecido pela API para exibir abatimentos sem necessidade de somar listas de descontos individualmente.

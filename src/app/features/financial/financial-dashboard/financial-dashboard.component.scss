@@ -26,3 +26,18 @@
   text-align: center;
   padding: 2rem;
 }
+
+.table-card {
+  margin-top: 2rem;
+}
+
+.discount-chip {
+  background-color: var(--mat-sys-error-container) !important;
+  color: var(--mat-sys-on-error-container) !important;
+  font-weight: 500;
+}
+
+.no-discounts {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}

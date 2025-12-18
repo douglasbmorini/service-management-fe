@@ -104,7 +104,7 @@
               <div class="note-inputs">
                 <mat-form-field appearance="outline" subscriptSizing="dynamic" class="note-textarea">
                   <mat-label>Adicionar nota de progresso</mat-label>
-                  <textarea matInput formControlName="note" cdkTextareaAutosize></textarea>
+                  <textarea matInput formControlName="note" cdkTextareaAutosize #progressNoteInput></textarea>
                 </mat-form-field>
                 @if (attendance.billing_type === 'HOURLY') {
                   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="hours-input">
@@ -183,7 +183,7 @@
       @if (attendanceForm.contains('payment_receipt_link')) {
         <mat-form-field>
           <mat-label>Link do Comprovante de Pagamento</mat-label>
-          <input matInput formControlName="payment_receipt_link">
+          <input matInput formControlName="payment_receipt_link" #paymentLinkInput>
           @if (attendanceForm.get('payment_receipt_link')?.hasError('pattern')) {
             <mat-error>Por favor, insira um link válido.</mat-error>
           }

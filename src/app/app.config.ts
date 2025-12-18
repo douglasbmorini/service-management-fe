@@ -1,5 +1,5 @@
 import {ApplicationConfig, DEFAULT_CURRENCY_CODE, LOCALE_ID} from '@angular/core';
-import {provideRouter} from '@angular/router';
+import {PreloadAllModules, provideRouter, withInMemoryScrolling, withPreloading} from '@angular/router';
 import {registerLocaleData} from '@angular/common';
 import localePtBr from '@angular/common/locales/pt';
 
@@ -17,7 +17,14 @@ registerLocaleData(localePtBr);
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes),
+    provideRouter(
+      routes,
+      withPreloading(PreloadAllModules), // Preloads all lazy-loaded routes
+      withInMemoryScrolling({ // Improves navigation UX
+        scrollPositionRestoration: 'enabled', // Restores scroll position on back/forward
+        anchorScrolling: 'enabled', // Scrolls to anchor fragments
+      })
+    ),
     provideAnimations(),
     provideHttpClient(withInterceptors([authInterceptor])),
 

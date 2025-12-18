@@ -49,7 +49,7 @@ import {MatIconModule} from '@angular/material/icon';
   templateUrl: './start-execution-form.html',
   styleUrl: './start-execution-form.scss'
 })
-export class StartExecutionForm implements OnInit {
+export class StartExecutionFormComponent implements OnInit {
   // Re-added the inject for AttendanceService
   private fb = inject(FormBuilder);
   private attendanceService = inject(AttendanceService);
@@ -62,7 +62,7 @@ export class StartExecutionForm implements OnInit {
   billingType: BillingType;
 
   constructor(
-    public dialogRef: MatDialogRef<StartExecutionForm>,
+    public dialogRef: MatDialogRef<StartExecutionFormComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { attendance: Attendance }
   ) {
     this.availableCollaborators$ = this.userService.getUsers()

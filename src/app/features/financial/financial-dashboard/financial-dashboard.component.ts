@@ -1,4 +1,4 @@
-import {Component, effect, inject, OnInit, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, effect, inject, OnInit, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {MatDialog} from '@angular/material/dialog';
 import {debounceTime, distinctUntilChanged, filter} from "rxjs";
@@ -16,7 +16,7 @@ import {User} from "../../../core/models/user.model";
 import {FinancialOverviewComponent} from "../financial-overview/financial-overview.component";
 import {CollaboratorFinancialsComponent} from '../collaborator-financials/collaborator-financials.component';
 import {AttendanceService} from "../../../core/services/attendance.service";
-import {CollaboratorFinancials, MonthlyChartData} from '../../../core/models/financial.model';
+import {CollaboratorFinancials} from '../../../core/models/financial.model';
 import {AddUserDiscountFormComponent} from "../add-user-discount-form/add-user-discount-form.component";
 import {MatButton, MatIconButton} from '@angular/material/button';
 import {Attendance, AttendanceStatus} from '../../../core/models/attendance.model';
@@ -25,6 +25,8 @@ import {CurrencyPipe, DatePipe, TitleCasePipe} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {AddDiscountFormComponent} from '../add-discount-form/add-discount-form.component';
+import {MatChip} from '@angular/material/chips';
+import {RouterLink} from '@angular/router';
 
 // Helper function to format date to 'YYYY-MM-DD'
 const formatDate = (date: Date): string => {
@@ -44,7 +46,6 @@ interface FinancialState {
     overduePayments: number;
     upcomingReceivables: number;
     inProgressValue: number;
-    monthlyChartData: MonthlyChartData[];
 }
 
 type DateRange = { start: Date | null, end: Date | null };
@@ -52,9 +53,10 @@ type DateRange = { start: Date | null, end: Date | null };
 @Component({
     selector: 'app-financial-dashboard',
     standalone: true,
-  imports: [ReactiveFormsModule, MatCardModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, FinancialOverviewComponent, CollaboratorFinancialsComponent, MatButton, MatTableModule, TitleCasePipe, MatIconModule, DatePipe, CurrencyPipe, MatIconButton],
+  imports: [ReactiveFormsModule, MatCardModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, FinancialOverviewComponent, CollaboratorFinancialsComponent, MatButton, MatTableModule, TitleCasePipe, MatIconModule, DatePipe, CurrencyPipe, MatIconButton, MatChip, RouterLink],
     templateUrl: './financial-dashboard.component.html',
-    styleUrls: ['./financial-dashboard.component.scss']
+    styleUrls: ['./financial-dashboard.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FinancialDashboardComponent implements OnInit {
     private financialService = inject(FinancialService);
@@ -77,7 +79,6 @@ export class FinancialDashboardComponent implements OnInit {
         overduePayments: 0,
         upcomingReceivables: 0,
         inProgressValue: 0,
-        monthlyChartData: []
     });
 
     // O FormGroup para o filtro de data
@@ -94,13 +95,14 @@ export class FinancialDashboardComponent implements OnInit {
       end: this.today
     });
 
-    allStatuses = [
+    // Lista de status relevantes apenas para o contexto financeiro.
+    financialStatuses = [
       AttendanceStatus.EM_EXECUCAO,
       AttendanceStatus.PENDENTE,
       AttendanceStatus.FATURADA,
       AttendanceStatus.FINALIZADA
     ];
-    displayedColumns: string[] = ['client', 'description', 'status', 'due_date', 'value', 'actions'];
+    displayedColumns: string[] = ['client', 'description', 'status', 'due_date', 'value', 'discounts', 'actions'];
 
     constructor() {
       // Conecta o formulário de data ao signal de forma reativa e segura
@@ -228,7 +230,6 @@ export class FinancialDashboardComponent implements OnInit {
           overduePayments: parseFloat(overview.totals.overdue_payments) || 0,
           upcomingReceivables: parseFloat(overview.totals.upcoming_receivables) || 0,
           inProgressValue: parseFloat(overview.totals.in_progress_value) || 0,
-          monthlyChartData: overview.monthly_invoiced_data,
           isLoading: false
         }));
       },
@@ -258,16 +259,12 @@ export class FinancialDashboardComponent implements OnInit {
   }
 
   getEntryValue(entry: Attendance): number {
-    if (entry.billing_type === 'HOURLY') {
-      return entry.collaborators.reduce((total, collaborator) => {
-        const collaboratorHours = entry.progress_notes
-          .filter(note => note.user.id === collaborator.user_id && note.hours_spent)
-          .reduce((sum, note) => sum + parseFloat(String(note.hours_spent)), 0);
-        const hourlyRate = parseFloat(String(collaborator.hourly_rate || 0));
-        return total + (collaboratorHours * hourlyRate);
-      }, 0);
-    }
-    return entry.total_proposal_value || 0;
+    // Usa o valor pré-calculado pelo backend, ou fallback para o valor da proposta
+    return entry.total_amount ?? entry.total_proposal_value ?? 0;
+  }
+
+  getTotalDiscounts(entry: Attendance): number {
+    return entry.total_discounts_amount ?? 0;
   }
 
     private loadCollaboratorData(userId: number, startDate: string, endDate: string): void {

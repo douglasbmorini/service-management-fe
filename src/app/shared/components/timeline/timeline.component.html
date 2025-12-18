@@ -2,17 +2,17 @@
   @for (step of timelineSteps(); track step.status; let i = $index) {
     <div class="timeline-item">
       <!-- Adiciona o status e o estado como classes para facilitar a estilização -->
-      <div class="timeline-step" [ngClass]="[step.state, step.status]">
+      <div class="timeline-step" [class]="step.state + ' ' + step.status">
         <div class="step-icon">
           <mat-icon>{{ step.icon }}</mat-icon>
         </div>
       </div>
-      <div class="step-label" [ngClass]="[step.state, step.status]">{{ step.label | titlecase }}</div>
+      <div class="step-label" [class]="step.state + ' ' + step.status">{{ step.label | titlecase }}</div>
     </div>
 
     <!-- Linha conectora entre os passos -->
     @if (i < timelineSteps().length - 1) {
-      <div class="timeline-connector" [ngClass]="step.state"></div>
+      <div class="timeline-connector" [class]="step.state"></div>
     }
   }
 </div>

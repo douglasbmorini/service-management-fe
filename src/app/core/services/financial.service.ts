@@ -2,7 +2,13 @@ import {inject, Injectable} from '@angular/core';
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {environment} from "../../../environments/environment";
-import {CollaboratorFinancials, DiscountCreate, FinancialOverview, UserDiscountCreate} from "../models/financial.model";
+import {
+  CollaboratorFinancials,
+  DiscountCreate,
+  FinancialClosing,
+  FinancialOverview,
+  UserDiscountCreate
+} from "../models/financial.model";
 
 const API_URL = `${environment.apiUrl}/financial`;
 
@@ -40,5 +46,23 @@ export class FinancialService {
 
   addUserDiscount(userId: number, discount: UserDiscountCreate): Observable<any> {
     return this.http.post(`${API_URL}/user-discounts/${userId}`, discount);
+  }
+
+  // --- Métodos para Fechamento Financeiro ---
+
+  getClosings(): Observable<FinancialClosing[]> {
+    return this.http.get<FinancialClosing[]>(`${API_URL}/closings/`);
+  }
+
+  getClosingById(id: number): Observable<FinancialClosing> {
+    return this.http.get<FinancialClosing>(`${API_URL}/closings/${id}`);
+  }
+
+  createClosing(startDate: string, endDate: string): Observable<FinancialClosing> {
+    return this.http.post<FinancialClosing>(`${API_URL}/closings/`, { start_date: startDate, end_date: endDate });
+  }
+
+  closeClosing(id: number): Observable<FinancialClosing> {
+    return this.http.put<FinancialClosing>(`${API_URL}/closings/${id}/close`, {});
   }
 }

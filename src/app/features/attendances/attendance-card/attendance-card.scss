@@ -33,11 +33,20 @@
   font-weight: 500;
   color: white;
 
+  &.status-created {
+    background-color: var(--status-created);
+  }
   &.status-proposal {
     background-color: var(--status-proposal);
   }
+  &.status-accepted {
+    background-color: var(--status-accepted);
+  }
+  &.status-refused {
+    background-color: var(--status-refused);
+  }
   &.status-executing {
-    background-color: var(--status-executing);
+    background-color: #17A2B8;
   }
   &.status-pending {
     background-color: var(--status-pending);

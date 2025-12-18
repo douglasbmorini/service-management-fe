@@ -37,7 +37,7 @@ import {TitleCasePipe} from "@angular/common";
   templateUrl: './client-form.html',
   styleUrl: './client-form.scss'
 })
-export class ClientForm implements OnInit {
+export class ClientFormComponent implements OnInit {
   private readonly fullNamePattern = '^[a-zA-ZÀ-ú]+(?:\\s[a-zA-ZÀ-ú]+)+$';
   private readonly emailPattern = '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$';
 
@@ -50,7 +50,7 @@ export class ClientForm implements OnInit {
   clientStatuses: ClientStatus[] = ['potencial', 'ativo', 'inativo'];
 
   constructor(
-    public dialogRef: MatDialogRef<ClientForm>,
+    public dialogRef: MatDialogRef<ClientFormComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { client?: Client }
   ) {
     this.isEditMode = !!this.data?.client;

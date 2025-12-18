@@ -66,7 +66,7 @@
                 <div class="item-main-content">
                   <div class="item-header">
                     <span class="item-title">{{ entry.service_description }}</span>
-                    <mat-chip [ngClass]="getStatusClass(entry.status)" selected>{{ entry.status.replace('_', ' ') | titlecase }}</mat-chip>
+                    <mat-chip [class]="getStatusClass(entry.status)" selected>{{ entry.status.replace('_', ' ') | titlecase }}</mat-chip>
                   </div>
                   <div class="financial-details">
                     <div class="financial-value">

@@ -1,4 +1,4 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -52,9 +52,10 @@ export function passwordMatchValidator(): ValidatorFn {
     MatIconModule
   ],
   templateUrl: './profile.html',
-  styleUrl: './profile.scss'
+  styleUrl: './profile.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Profile implements OnInit {
+export class ProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private userService = inject(UserService);

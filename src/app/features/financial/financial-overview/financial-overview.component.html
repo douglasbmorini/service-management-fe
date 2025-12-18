@@ -9,7 +9,7 @@
           <mat-card-title>Pagamentos Vencidos</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <p>{{ overduePayments | currency }}</p>
+          <p>{{ overduePayments() | currency }}</p>
         </mat-card-content>
       </mat-card>
 
@@ -18,7 +18,7 @@
           <mat-card-title>A Receber (Próx. 30 dias)</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <p>{{ upcomingReceivables | currency }}</p>
+          <p>{{ upcomingReceivables() | currency }}</p>
         </mat-card-content>
       </mat-card>
 
@@ -27,7 +27,7 @@
           <mat-card-title>Valor em Andamento</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <p>{{ inProgressValue | currency }}</p>
+          <p>{{ inProgressValue() | currency }}</p>
         </mat-card-content>
       </mat-card>
     </div>
@@ -42,32 +42,10 @@
           <mat-card-title>Recebido no Período</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <p>{{ receivedInPeriod | currency }}</p>
+          <p>{{ receivedInPeriod() | currency }}</p>
         </mat-card-content>
       </mat-card>
     </div>
   </div>
-
-  <!-- Monthly Invoiced Chart -->
-  @if (monthlyChartData && monthlyChartData.length > 0) {
-    <mat-card class="chart-card">
-      <mat-card-header>
-        <mat-card-title>Faturamento Mensal</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <ngx-charts-bar-vertical
-          [results]="monthlyChartData"
-          [xAxis]="true"
-          [yAxis]="true"
-          [legend]="false"
-          [showXAxisLabel]="true"
-          [animations]="false"
-          [showYAxisLabel]="true"
-          xAxisLabel="Mês"
-          yAxisLabel="Valor Faturado">
-        </ngx-charts-bar-vertical>
-      </mat-card-content>
-    </mat-card>
-  }
 
 </div>

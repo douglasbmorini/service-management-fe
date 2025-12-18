@@ -30,6 +30,9 @@ export class AttendanceService {
     if (filters.collaboratorId) {
       params = params.set('collaborator_id', filters.collaboratorId.toString());
     }
+    if (filters.ids && filters.ids.length > 0) {
+      filters.ids.forEach(id => params = params.append('ids', id));
+    }
     if (filters.status) {
       params = params.set('status', filters.status);
     }
@@ -75,5 +78,9 @@ export class AttendanceService {
 
   resolveBlockerNote(attendanceId: number, noteId: number): Observable<any> {
     return this.http.put(`${API_URL}/attendances/${attendanceId}/blocker-notes/${noteId}/resolve`, {});
+  }
+
+  deleteAttendance(id: number, justification: string): Observable<any> {
+    return this.http.delete<any>(`${API_URL}/attendances/${id}`, { body: { justification } });
   }
 }

@@ -1,4 +1,14 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, inject, OnInit} from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Inject,
+  inject,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -76,7 +86,7 @@ export function maxHoursValidator(max: number): ValidatorFn {
   styleUrl: './attendance-form.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AttendanceForm implements OnInit {
+export class AttendanceFormComponent implements OnInit, AfterViewInit {
   private fb = inject(FormBuilder);
   private attendanceService = inject(AttendanceService);
   private clientService = inject(ClientService);
@@ -97,9 +107,12 @@ export class AttendanceForm implements OnInit {
   // Instance of the custom error state matcher.
   immediateErrorMatcher = new ImmediateErrorStateMatcher();
 
+  @ViewChild('progressNoteInput') progressNoteInput?: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('paymentLinkInput') paymentLinkInput?: ElementRef<HTMLInputElement>;
+
   constructor(
-    public dialogRef: MatDialogRef<AttendanceForm>,
-    @Inject(MAT_DIALOG_DATA) public data: { attendance?: Attendance }
+    public dialogRef: MatDialogRef<AttendanceFormComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { attendance?: Attendance, focusSection?: 'progress' | 'payment' }
   ) {
     this.isEditMode = !!this.data?.attendance;
 
@@ -121,7 +134,7 @@ export class AttendanceForm implements OnInit {
       billing_type: [this.data?.attendance?.billing_type || BillingType.FIXED_PRICE, Validators.required],
       defineHourPackage: [this.isEditMode && !!this.data.attendance?.total_hours], // Novo controle para o toggle
       service_description: [this.data?.attendance?.service_description || '', Validators.required],
-      contract_link: [this.data?.attendance?.contract_link || '', [Validators.pattern(this.urlPattern)]],
+      contract_link: [this.data?.attendance?.contract_link || 'http://link-contrato.com', [Validators.pattern(this.urlPattern)]],
     });
 
     // Adiciona o controle de horas e a lógica de validação condicional
@@ -146,11 +159,11 @@ export class AttendanceForm implements OnInit {
       // Campos de progresso são editáveis apenas durante a execução
       // Link da fatura é editável para mover o atendimento para FATURADA
       if (attendance.status === AttendanceStatus.EM_EXECUCAO) {
-        this.attendanceForm.addControl('invoice_link', this.fb.control(attendance.invoice_link || '', [Validators.pattern(this.urlPattern)]));
+        this.attendanceForm.addControl('invoice_link', this.fb.control(attendance.invoice_link || 'http://link-fatura.com', [Validators.pattern(this.urlPattern)]));
       }
       // Link do pagamento é editável para mover o atendimento para FINALIZADA
       if (attendance.status === AttendanceStatus.FATURADA) {
-        this.attendanceForm.addControl('payment_receipt_link', this.fb.control(attendance.payment_receipt_link || '', [Validators.pattern(this.urlPattern)]));
+        this.attendanceForm.addControl('payment_receipt_link', this.fb.control(attendance.payment_receipt_link || 'http://link-pagamento.com', [Validators.pattern(this.urlPattern)]));
       }
 
       // Inicializa o formulário de nota de progresso
@@ -204,6 +217,21 @@ export class AttendanceForm implements OnInit {
         }
         totalHoursControl?.updateValueAndValidity();
       });
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (this.data.focusSection) {
+      // Pequeno delay para garantir que o DOM foi renderizado e o dialog aberto
+      setTimeout(() => {
+        if (this.data.focusSection === 'progress' && this.progressNoteInput) {
+          this.progressNoteInput.nativeElement.focus();
+          this.progressNoteInput.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (this.data.focusSection === 'payment' && this.paymentLinkInput) {
+          this.paymentLinkInput.nativeElement.focus();
+          this.paymentLinkInput.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
     }
   }
 

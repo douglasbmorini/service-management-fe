@@ -48,3 +48,40 @@ td.mat-mdc-cell mat-icon {
     font-style: italic;
   }
 }
+
+// Estilos para os chips de status na tabela
+td.mat-mdc-cell mat-chip {
+  font-weight: 500;
+  color: white;
+  min-height: 24px;
+  font-size: 0.75rem;
+  padding: 4px 0; // Ajuste fino para o tamanho na tabela
+
+  &.status-created {
+    background-color: var(--status-created);
+  }
+  &.status-proposal {
+    background-color: var(--status-proposal);
+  }
+  &.status-accepted {
+    background-color: var(--status-accepted);
+  }
+  &.status-refused {
+    background-color: var(--status-refused);
+  }
+  &.status-executing {
+    background-color: var(--status-executing);
+  }
+  &.status-pending {
+    background-color: var(--status-pending);
+  }
+  &.status-invoiced {
+    background-color: var(--status-invoiced);
+  }
+  &.status-finished {
+    background-color: var(--status-finished);
+  }
+  &.status-default {
+    background-color: var(--status-default);
+  }
+}

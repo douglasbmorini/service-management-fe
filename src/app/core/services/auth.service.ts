@@ -1,4 +1,4 @@
-import {computed, Injectable, signal} from '@angular/core';
+import {computed, inject, Injectable, signal} from '@angular/core';
 import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
 import {Router} from '@angular/router';
 import {catchError, EMPTY, finalize, Observable, switchMap, tap} from 'rxjs';
@@ -36,9 +36,12 @@ export class AuthService {
   // Private writable signal for auth readiness
   private readonly _isAuthReady = signal(false);
   // Public readonly signal to prevent external modification
-  readonly isAuthReady = this._isAuthReady.asReadonly();
+  public readonly isAuthReady = this._isAuthReady.asReadonly();
 
-  constructor(private http: HttpClient, private router: Router) {
+  private http = inject(HttpClient);
+  private router = inject(Router);
+
+  constructor() {
     this.loadInitialState();
   }
 

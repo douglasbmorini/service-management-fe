@@ -1,14 +1,34 @@
-import {Component, computed, Input} from '@angular/core';
-import {NgClass, TitleCasePipe} from '@angular/common';
+import {ChangeDetectionStrategy, Component, computed, Input} from '@angular/core';
+import {TitleCasePipe} from '@angular/common';
 import {AttendanceStatus} from '../../../core/models/attendance.model';
 import {MatIconModule} from "@angular/material/icon";
 
 @Component({
   selector: 'app-timeline',
   standalone: true,
-  imports: [NgClass, MatIconModule, TitleCasePipe],
-  templateUrl: './timeline.component.html',
+  imports: [MatIconModule, TitleCasePipe],
+  template: `
+    <div class="timeline-container">
+      @for (step of timelineSteps(); track step.status; let i = $index) {
+        <div class="timeline-item">
+          <!-- Adiciona o status e o estado como classes para facilitar a estilização -->
+          <div class="timeline-step" [class]="step.state + ' ' + step.status">
+            <div class="step-icon">
+              <mat-icon>{{ step.icon }}</mat-icon>
+            </div>
+          </div>
+          <div class="step-label" [class]="step.state + ' ' + step.status">{{ step.label | titlecase }}</div>
+        </div>
+
+        <!-- Linha conectora entre os passos -->
+        @if (i < timelineSteps().length - 1) {
+          <div class="timeline-connector" [class]="step.state"></div>
+        }
+      }
+    </div>
+  `,
   styleUrls: ['./timeline.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimelineComponent {
   @Input({ required: true }) currentStatus!: AttendanceStatus;
